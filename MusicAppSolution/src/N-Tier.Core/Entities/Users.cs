@@ -2,9 +2,15 @@
 
 namespace N_Tier.Core.Entities;
 
-public class Card_Type : BaseEntity, IAuditedEntity
+public class Users : BaseEntity, IAuditedEntity
 {
     public required string Name { get; set; }
+
+    public required string Email { get; set; }
+
+    public required string Address { get; set; }
+
+    public required string PassportId { get; set; }
 
     public ICollection<Cards> Cards { get; set; }
 

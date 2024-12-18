@@ -2,7 +2,7 @@
 
 namespace N_Tier.Core.Entities;
 
-public class Payment_History : BaseEntity, IAuditedEntity
+public class PaymentHistory : BaseEntity, IAuditedEntity
 {
     public Cards Cards { get; set; }
     public Guid CardsId { get; set; }

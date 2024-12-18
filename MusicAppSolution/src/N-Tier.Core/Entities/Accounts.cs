@@ -11,7 +11,7 @@ namespace N_Tier.Core.Entities
 
         public int Balance { get; set; }
 
-        public User User { get; set; }
+        public Users User { get; set; }
         public Guid UserId { get; set; }
 
         public string CreatedBy { get; set; }
