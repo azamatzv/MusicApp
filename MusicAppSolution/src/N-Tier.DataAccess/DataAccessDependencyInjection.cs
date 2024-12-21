@@ -6,6 +6,7 @@ using N_Tier.DataAccess.Persistence;
 using Microsoft.AspNetCore.Identity;
 using N_Tier.DataAccess.Identity;
 using N_Tier.DataAccess.Repositories.Impl;
+using N_Tier.DataAccess.Repositories;
 
 namespace N_Tier.DataAccess;
 
@@ -24,7 +25,17 @@ public static class DataAccessDependencyInjection
 
     private static void AddRepositories(this IServiceCollection services)
     {
-
+        services.AddScoped<IAccountsRepository, AccountRepository>();
+        services.AddScoped<IAuthorRepository, AuthorRepository>();
+        services.AddScoped<ICardsRepository, CardsRepository>();
+        services.AddScoped<ICardTypeRepository, CardTypeRepository>();
+        services.AddScoped<IDownloadsRepository, DownloadsRepository>();
+        services.AddScoped<IFavouritesRepository, FavouritesRepository>();
+        services.AddScoped<IGenreRepository, GenreRepository>();
+        services.AddScoped<IMusicRepository, MusicRepository>();
+        services.AddScoped<IPaymentHistoryRepository, PaymentHistoryRepository>();
+        services.AddScoped<ITariffTypeRepository, TariffTypeRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
     }
 
     private static void AddDatabase(this IServiceCollection services, IConfiguration configuration)

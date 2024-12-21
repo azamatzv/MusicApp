@@ -14,11 +14,11 @@ public class Cards : BaseEntity, IAuditedEntity
 
     public required string Expire_Date { get; set; }
 
-    public string CreatedBy { get; set; }
+    public string? CreatedBy { get; set; }
 
-    public DateTime CreatedOn { get; set; }
+    public DateTime? CreatedOn { get; set; }
 
-    public string UpdatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
 
     public DateTime? UpdatedOn { get; set; }
 
