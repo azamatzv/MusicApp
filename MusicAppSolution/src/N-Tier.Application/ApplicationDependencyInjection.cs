@@ -22,7 +22,8 @@ public static class ApplicationDependencyInjection
     private static void AddServices(this IServiceCollection services, IWebHostEnvironment env)
     {
         services.AddScoped<IClaimService, ClaimService>();
-        services.AddScoped<UserService>();
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<ITariffTypeService, TariffTypeService>();
     }
 
 

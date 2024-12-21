@@ -24,6 +24,11 @@ public class TariffTypeService : ITariffTypeService
         return MapToDto(tariff);
     }
 
+    public async Task<TariffType?> GetTariffByIdAsync(Guid id)
+    {
+        return await _repository.GetFirstAsync(a => a.Id == id);
+    }
+
     private TariffType MapToDto(TariffType tariffType)
     {
         return new TariffType

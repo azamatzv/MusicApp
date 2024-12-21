@@ -19,10 +19,18 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
 
     public async Task<TEntity> AddAsync(TEntity entity)
     {
-        var addedEntity = (await DbSet.AddAsync(entity)).Entity;
-        await Context.SaveChangesAsync();
+        try
+        {
+            var addedEntity = (await DbSet.AddAsync(entity)).Entity;
+            await Context.SaveChangesAsync();
 
-        return addedEntity;
+            return addedEntity;
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
     }
 
     public async Task<TEntity> DeleteAsync(TEntity entity)

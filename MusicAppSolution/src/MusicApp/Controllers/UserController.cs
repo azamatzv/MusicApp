@@ -46,7 +46,7 @@ namespace MusicApp.Controllers
             try
             {
                 var createdUser = await _userService.AddUserAsync(userDto);
-                return CreatedAtAction(nameof(GetById), new { id = createdUser.Id }, createdUser);
+                return Ok(createdUser);
             }
             catch (Exception ex)
             {

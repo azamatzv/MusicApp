@@ -8,9 +8,9 @@ public class Users : BaseEntity, IAuditedEntity
 
     public required string Email { get; set; }
 
-    public required string Address { get; set; }
+    public required string Password { get; set; }
 
-    public required string PassportId { get; set; }
+    public Role Role { get; set; } = Role.User;
 
     public ICollection<Accounts> Accounts { get; set; }
 
@@ -23,4 +23,12 @@ public class Users : BaseEntity, IAuditedEntity
     public string? UpdatedBy { get; set; }
 
     public DateTime? UpdatedOn { get; set; }
+}
+
+
+
+public enum Role
+{
+    User = 1,
+    Admin = 2
 }

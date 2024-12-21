@@ -5,9 +5,9 @@ namespace N_Tier.Application.Services;
 
 public interface IUserService
 {
-    Task<UserDto> GetByIdAsync(int id);
+    Task<UserDto> GetByIdAsync(Guid id);
     Task<List<UserDto>> GetAllAsync();
-    Task<Users> AddUserAsync(UserDto userDto);
-    Task<UserDto> UpdateUserAsync(int id, UserDto userDto);
-    Task<bool> DeleteUserAsync(int id);
+    Task<UserDto> AddUserAsync(UserDto userDto);
+    Task<UserDto> UpdateUserAsync(Guid id, UserDto userDto);
+    Task<bool> DeleteUserAsync(Guid id);
 }

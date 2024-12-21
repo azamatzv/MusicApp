@@ -4,7 +4,7 @@ using N_Tier.DataAccess.Repositories;
 
 namespace N_Tier.Application.Services.Impl;
 
-public class UserService
+public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
 
@@ -13,33 +13,21 @@ public class UserService
         _userRepository = userRepository;
     }
 
-    public async Task<Users> GetByIdAsync(Guid id)
-    {
-        var user = await _userRepository.GetFirstAsync(u => u.Id == id);
-        if (user == null) throw new Exception("User not found");
-        return MapToDto(user);
-    }
-
-    public async Task<List<Users>> GetAllAsync()
-    {
-        var users = await _userRepository.GetAllAsync(_ => true);
-        return users.Select(MapToDto).ToList();
-    }
-
-    public async Task<Users> AddUserAsync(UserDto userDto)
+    public async Task<UserDto> AddUserAsync(UserDto userDto)
     {
         var user = new Users
         {
             Name = userDto.Name,
             Email = userDto.Email,
-            Address = userDto.Address,
-            PassportId = userDto.PassportId,
+            Password = userDto.Password,
             CreatedBy = "System",
             Accounts = new List<Accounts>
         {
             new Accounts
             {
-                Name = userDto.Name
+                Name = userDto.Name,
+                TariffTypeId=userDto.TariffId
+
             }
         }
         };
@@ -59,14 +47,27 @@ public class UserService
         return MapToDto(createdUser);
     }
 
-    public async Task<Users> UpdateUserAsync(Guid id, UserDto userDto)
+
+    public async Task<UserDto> GetByIdAsync(Guid id)
+    {
+        var user = await _userRepository.GetFirstAsync(u => u.Id == id);
+        if (user == null) throw new Exception("User not found");
+        return MapToDto(user);
+    }
+
+    public async Task<List<UserDto>> GetAllAsync()
+    {
+        var users = await _userRepository.GetAllAsync(_ => true);
+        return users.Select(MapToDto).ToList();
+    }
+
+    public async Task<UserDto> UpdateUserAsync(Guid id, UserDto userDto)
     {
         var user = await _userRepository.GetFirstAsync(u => u.Id == id);
         if (user == null) throw new Exception("User not found");
 
         user.Email = userDto.Email;
-        user.Address = userDto.Address;
-        user.PassportId = userDto.PassportId;
+        user.Password = userDto.Password;
 
         await _userRepository.UpdateAsync(user);
 
@@ -82,29 +83,14 @@ public class UserService
         return true;
     }
 
-    private Users MapToDto(Users user)
+
+    private UserDto MapToDto(Users user)
     {
-        return new Users
+        return new UserDto
         {
             Name = user.Name,
             Email = user.Email,
-            Address = user.Address,
-            PassportId = user.PassportId
+            Password = user.Password
         };
-    }
-
-    public Task<UserDto> GetByIdAsync(int id)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<UserDto> UpdateUserAsync(int id, UserDto userDto)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<bool> DeleteUserAsync(int id)
-    {
-        throw new NotImplementedException();
     }
 }
