@@ -74,14 +74,7 @@ public class UserService : IUserService
         return MapToDto(user);
     }
 
-    public async Task<bool> DeleteUserAsync(Guid id)
-    {
-        var user = await _userRepository.GetFirstAsync(u => u.Id == id);
-        if (user == null) throw new Exception("User not found");
 
-        await _userRepository.DeleteAsync(user);
-        return true;
-    }
 
 
     private UserDto MapToDto(Users user)

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using N_Tier.Application.Services;
 using N_Tier.Application.Services.Impl;
 using N_Tier.Core.DTOs;
@@ -6,9 +7,9 @@ using N_Tier.Core.Entities;
 
 namespace MusicApp.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class TariffTypeController : ControllerBase
+
+    [Authorize]
+    public class TariffTypeController : ApiController
     {
         private readonly ITariffTypeService _tariffTypeService;
 

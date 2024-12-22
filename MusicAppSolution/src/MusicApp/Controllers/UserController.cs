@@ -1,17 +1,18 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using N_Tier.Application.Services;
 using N_Tier.Application.Services.Impl;
 using N_Tier.Core.DTOs;
 
 namespace MusicApp.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class UserController : ControllerBase
-    {
-        private readonly UserService _userService;
 
-        public UserController(UserService userService)
+    [Authorize]
+    public class UserController : ApiController
+    {
+        private readonly IUserService _userService;
+
+        public UserController(IUserService userService)
         {
             _userService = userService;
         }
@@ -72,18 +73,6 @@ namespace MusicApp.Controllers
             }
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(Guid id)
-        {
-            try
-            {
-                await _userService.DeleteUserAsync(id);
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                return NotFound(new { Message = ex.Message });
-            }
-        }
+
     }
 }

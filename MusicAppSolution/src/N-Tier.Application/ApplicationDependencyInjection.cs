@@ -31,4 +31,6 @@ public static class ApplicationDependencyInjection
     {
         services.AddMemoryCache();
     }
+
+
 }
