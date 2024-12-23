@@ -28,7 +28,6 @@ public static class DataAccessDependencyInjection
         services.AddScoped<IAccountsRepository, AccountRepository>();
         services.AddScoped<IAuthorRepository, AuthorRepository>();
         services.AddScoped<ICardsRepository, CardsRepository>();
-        services.AddScoped<ICardTypeRepository, CardTypeRepository>();
         services.AddScoped<IDownloadsRepository, DownloadsRepository>();
         services.AddScoped<IFavouritesRepository, FavouritesRepository>();
         services.AddScoped<IGenreRepository, GenreRepository>();

@@ -24,6 +24,9 @@ public static class ApplicationDependencyInjection
         services.AddScoped<IClaimService, ClaimService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<ITariffTypeService, TariffTypeService>();
+        services.AddScoped<IAccountService, AccountService>();
+        services.AddScoped<IAuthorService, AuthorService>();
+        services.AddScoped<ICardsService, CardService>();
     }
 
 

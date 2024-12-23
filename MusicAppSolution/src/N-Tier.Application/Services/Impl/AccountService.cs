@@ -4,7 +4,7 @@ using N_Tier.DataAccess.Repositories;
 
 namespace N_Tier.Application.Services.Impl;
 
-public class AccountService
+public class AccountService : IAccountService
 {
     private readonly IAccountsRepository _accountRepository;
 

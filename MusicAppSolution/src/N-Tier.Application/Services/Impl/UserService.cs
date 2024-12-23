@@ -22,16 +22,14 @@ public class UserService : IUserService
             Password = userDto.Password,
             CreatedBy = "System",
             Accounts = new List<Accounts>
-        {
-            new Accounts
             {
-                Name = userDto.Name,
-                TariffTypeId=userDto.TariffId
-
+                new Accounts
+                {
+                    Name = userDto.Name,
+                    TariffTypeId = userDto.TariffId
+                }
             }
-        }
         };
-
 
         var createdUser = await _userRepository.AddAsync(user);
 
@@ -46,7 +44,6 @@ public class UserService : IUserService
 
         return MapToDto(createdUser);
     }
-
 
     public async Task<UserDto> GetByIdAsync(Guid id)
     {
@@ -74,7 +71,17 @@ public class UserService : IUserService
         return MapToDto(user);
     }
 
+    public async Task<bool> DeleteUserAsync(Guid id)
+    {
+        var user = await  _userRepository.GetFirstAsync(i => i.Id == id);
+        
+        if (user == null)
+            throw new Exception("User not found");
 
+        await _userRepository.DeleteAsync(user);
+
+        return true;
+    }
 
 
     private UserDto MapToDto(Users user)

@@ -9,10 +9,9 @@ public class Cards : BaseEntity, IAuditedEntity
 
     public required int CardNumber { get; set; }
 
-    public CardType CardType { get; set; }
-    public Guid CardTypeId { get; set; }
-
     public required string Expire_Date { get; set; }
+
+    public CardType CardType { get; set; }
 
     public string? CreatedBy { get; set; }
 
@@ -21,5 +20,13 @@ public class Cards : BaseEntity, IAuditedEntity
     public string? UpdatedBy { get; set; }
 
     public DateTime? UpdatedOn { get; set; }
+}
 
+
+public enum CardType
+{
+    Uzcard = 1,
+    Humo = 2,
+    Visa = 3,
+    MasterCard = 4
 }

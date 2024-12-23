@@ -1,5 +1,4 @@
-﻿
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using N_Tier.Core.Common;
 using N_Tier.Core.Entities;
@@ -24,14 +23,13 @@ public class DatabaseContext : IdentityDbContext<ApplicationUser>
     public DbSet<Accounts> Accounts { get; set; }
     public DbSet<Author> Authors { get; set; }
     public DbSet<Cards> Cards { get; set; }
-    public DbSet<CardType> CardTypes { get; set; }
     public DbSet<Downloads> Downloads { get; set; }
     public DbSet<Favourites> Favourites { get; set; }
     public DbSet<Genre> Genres { get; set; }
     public DbSet<Music> Musics { get; set; }
     public DbSet<PaymentHistory> PaymentHistories { get; set; }
     public DbSet<TariffType> TariffTypes { get; set; }
-    public DbSet<Users> Users { get; set; }
+    public DbSet<Users> Userss { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -58,6 +56,4 @@ public class DatabaseContext : IdentityDbContext<ApplicationUser>
 
         return await base.SaveChangesAsync(cancellationToken);
     }
-
-
 }

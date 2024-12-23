@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using N_Tier.DataAccess.Persistence;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace N_Tier.DataAccess.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20241222145515_test")]
+    partial class test
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -225,6 +228,33 @@ namespace N_Tier.DataAccess.Migrations
                     b.ToTable("Authors");
                 });
 
+            modelBuilder.Entity("N_Tier.Core.Entities.CardType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("CreatedOn")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedOn")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CardTypes");
+                });
+
             modelBuilder.Entity("N_Tier.Core.Entities.Cards", b =>
                 {
                     b.Property<Guid>("Id")
@@ -234,8 +264,8 @@ namespace N_Tier.DataAccess.Migrations
                     b.Property<int>("CardNumber")
                         .HasColumnType("integer");
 
-                    b.Property<int>("CardType")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("CardTypeId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
@@ -257,6 +287,8 @@ namespace N_Tier.DataAccess.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CardTypeId");
 
                     b.HasIndex("UserId");
 
@@ -505,7 +537,7 @@ namespace N_Tier.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Userss");
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("N_Tier.DataAccess.Identity.ApplicationUser", b =>
@@ -644,11 +676,19 @@ namespace N_Tier.DataAccess.Migrations
 
             modelBuilder.Entity("N_Tier.Core.Entities.Cards", b =>
                 {
+                    b.HasOne("N_Tier.Core.Entities.CardType", "CardType")
+                        .WithMany("Cards")
+                        .HasForeignKey("CardTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("N_Tier.Core.Entities.Users", "User")
                         .WithMany("Cards")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CardType");
 
                     b.Navigation("User");
                 });
@@ -740,6 +780,11 @@ namespace N_Tier.DataAccess.Migrations
             modelBuilder.Entity("N_Tier.Core.Entities.Author", b =>
                 {
                     b.Navigation("Musics");
+                });
+
+            modelBuilder.Entity("N_Tier.Core.Entities.CardType", b =>
+                {
+                    b.Navigation("Cards");
                 });
 
             modelBuilder.Entity("N_Tier.Core.Entities.Genre", b =>
