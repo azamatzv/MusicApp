@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using N_Tier.Application.Services;
 using N_Tier.Application.Services.Impl;
+using N_Tier.DataAccess.Authentication;
 using N_Tier.Shared.Services;
 using N_Tier.Shared.Services.Impl;
 
@@ -24,6 +25,7 @@ public static class ApplicationDependencyInjection
         services.AddScoped<IClaimService, ClaimService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<ITariffTypeService, TariffTypeService>();
+        services.AddScoped<IPasswordHasher, PasswordHasher>();
     }
 
 

@@ -7,7 +7,7 @@ using N_Tier.Core.DTOs;
 namespace MusicApp.Controllers
 {
 
-    [Authorize]
+    //[Authorize]
     public class UserController : ApiController
     {
         private readonly IUserService _userService;

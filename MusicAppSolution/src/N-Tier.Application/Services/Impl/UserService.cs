@@ -1,5 +1,6 @@
 ﻿using N_Tier.Core.DTOs;
 using N_Tier.Core.Entities;
+using N_Tier.DataAccess.Authentication;
 using N_Tier.DataAccess.Repositories;
 
 namespace N_Tier.Application.Services.Impl;
@@ -7,20 +8,27 @@ namespace N_Tier.Application.Services.Impl;
 public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
+    private readonly IPasswordHasher _passwordHasher;
 
-    public UserService(IUserRepository userRepository)
+    public UserService(IUserRepository userRepository, IPasswordHasher passwordHasher)
     {
         _userRepository = userRepository;
+        _passwordHasher = passwordHasher;
     }
 
     public async Task<UserDto> AddUserAsync(UserDto userDto)
     {
+        string randomSalt = Guid.NewGuid().ToString();
+
         var user = new Users
         {
             Name = userDto.Name,
             Email = userDto.Email,
-            Password = userDto.Password,
+            Password = _passwordHasher.Encrypt(
+                password: userDto.Password,
+                salt : randomSalt),
             CreatedBy = "System",
+            Salt = randomSalt,
             Accounts = new List<Accounts>
         {
             new Accounts

@@ -12,6 +12,8 @@ public class Users : BaseEntity, IAuditedEntity
 
     public Role Role { get; set; } = Role.User;
 
+    public string Salt { get; set; }
+
     public ICollection<Accounts> Accounts { get; set; }
 
     public ICollection<Cards> Cards { get; set; }
@@ -23,6 +25,8 @@ public class Users : BaseEntity, IAuditedEntity
     public string? UpdatedBy { get; set; }
 
     public DateTime? UpdatedOn { get; set; }
+
+  
 }
 
 

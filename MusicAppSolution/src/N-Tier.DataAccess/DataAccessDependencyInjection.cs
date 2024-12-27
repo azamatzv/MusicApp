@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Diagnostics;
+﻿
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -42,16 +43,9 @@ public static class DataAccessDependencyInjection
     {
         var databaseConfig = configuration.GetSection("Database").Get<DatabaseConfiguration>();
 
-        if (databaseConfig.UseInMemoryDatabase)
-            services.AddDbContext<DatabaseContext>(options =>
-            {
-                options.UseInMemoryDatabase("NTierDatabase");
-                options.ConfigureWarnings(x => x.Ignore(InMemoryEventId.TransactionIgnoredWarning));
-            });
-        else
-            services.AddDbContext<DatabaseContext>(options =>
-                options.UseNpgsql(databaseConfig.ConnectionString,
-                    opt => opt.MigrationsAssembly(typeof(DatabaseContext).Assembly.FullName)));
+        services.AddDbContext<DatabaseContext>(options =>
+            options.UseNpgsql(databaseConfig.ConnectionString,
+                opt => opt.MigrationsAssembly(typeof(DatabaseContext).Assembly.FullName)));
     }
 
     private static void AddIdentity(this IServiceCollection services)
