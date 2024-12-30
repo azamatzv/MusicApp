@@ -8,7 +8,7 @@ using N_Tier.Core.Entities;
 namespace MusicApp.Controllers
 {
 
-    //[Authorize]
+    [Authorize]
     public class TariffTypeController : ApiController
     {
         private readonly ITariffTypeService _tariffTypeService;

@@ -33,7 +33,12 @@ public class ExceptionHandlingMiddleware
         _logger.LogError(ex.Message);
 
         var code = StatusCodes.Status500InternalServerError;
-        var errors = new List<string> { ex.InnerException?.Message };
+        var errors = new List<string> { ex.Message };
+
+        if (ex.InnerException != null)
+        {
+            errors.Add(ex.InnerException.Message);
+        }
 
         code = ex switch
         {

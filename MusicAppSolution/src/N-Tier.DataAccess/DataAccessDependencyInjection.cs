@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using N_Tier.DataAccess.Identity;
 using N_Tier.DataAccess.Repositories.Impl;
 using N_Tier.DataAccess.Repositories;
+using N_Tier.DataAccess.Authentication;
 
 namespace N_Tier.DataAccess;
 
@@ -37,6 +38,8 @@ public static class DataAccessDependencyInjection
         services.AddScoped<IPaymentHistoryRepository, PaymentHistoryRepository>();
         services.AddScoped<ITariffTypeRepository, TariffTypeRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IJwtTokenHandler, JwtTokenHandler>();
+        services.AddScoped<IPasswordHasher, PasswordHasher>();
     }
 
     private static void AddDatabase(this IServiceCollection services, IConfiguration configuration)

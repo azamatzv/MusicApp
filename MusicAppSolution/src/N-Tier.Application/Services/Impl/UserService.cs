@@ -18,6 +18,8 @@ public class UserService : IUserService
 
     public async Task<UserDto> AddUserAsync(UserDto userDto)
     {
+
+
         string randomSalt = Guid.NewGuid().ToString();
 
         var user = new Users
@@ -26,7 +28,7 @@ public class UserService : IUserService
             Email = userDto.Email,
             Password = _passwordHasher.Encrypt(
                 password: userDto.Password,
-                salt : randomSalt),
+                salt: randomSalt),
             CreatedBy = "System",
             Salt = randomSalt,
             Accounts = new List<Accounts>

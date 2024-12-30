@@ -1,7 +1,10 @@
-﻿namespace N_Tier.Core.DTOs;
+﻿using N_Tier.Core.Entities;
+
+namespace N_Tier.Core.DTOs;
 
 public class UserDto
 {
+
     public Guid TariffId { get; set; }
 
     public required string Name { get; set; }

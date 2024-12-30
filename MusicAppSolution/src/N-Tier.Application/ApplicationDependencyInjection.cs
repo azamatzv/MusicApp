@@ -25,7 +25,7 @@ public static class ApplicationDependencyInjection
         services.AddScoped<IClaimService, ClaimService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<ITariffTypeService, TariffTypeService>();
-        services.AddScoped<IPasswordHasher, PasswordHasher>();
+
     }
 
 

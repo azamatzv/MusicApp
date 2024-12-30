@@ -26,7 +26,7 @@ public class Users : BaseEntity, IAuditedEntity
 
     public DateTime? UpdatedOn { get; set; }
 
-  
+
 }
 
 
