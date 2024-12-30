@@ -17,8 +17,7 @@ public class AuthorService : IAuthorService
     {
         var author = new Author
         {
-            Name = dto.Name,
-            CreatedBy = "System"
+            Name = dto.Name
         };
 
         var add = await _authorRepository.AddAsync(author);
@@ -54,15 +53,15 @@ public class AuthorService : IAuthorService
 
     public async Task<AuthorDto> UpdateAuthorAsync(Guid id, AuthorDto dto)
     {
-        var resuult = await _authorRepository.GetFirstAsync(i => i.Id == id);
-        if (resuult == null)
+        var result = await _authorRepository.GetFirstAsync(i => i.Id == id);
+        if (result == null)
             throw new Exception("Author not found");
 
-        resuult.Name = dto.Name;
+        result.Name = dto.Name;
 
-        await _authorRepository.UpdateAsync(resuult);
+        await _authorRepository.UpdateAsync(result);
 
-        return MapToDto(resuult);
+        return MapToDto(result);
     }
 
 

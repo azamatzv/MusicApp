@@ -1,4 +1,5 @@
 ﻿using N_Tier.Core.DTOs;
+using N_Tier.Core.Entities;
 using N_Tier.DataAccess.Repositories;
 
 namespace N_Tier.Application.Services.Impl;
@@ -12,28 +13,63 @@ public class GenreService : IGenreService
         _genreRepository = genreRepository;
     }
 
-    public Task<GenreDto> AddGenreAsync(GenreDto userDto)
+    public async Task<GenreDto> AddGenreAsync(GenreDto userDto)
     {
-        throw new NotImplementedException();
+        var genre = new Genre
+        {
+            Name = userDto.Name
+        };
+
+        var add = await _genreRepository.AddAsync(genre);
+
+        return MapToDto(add);
     }
 
-    public Task<bool> DeleteGenreAsync(Guid id)
+    public async Task<bool> DeleteGenreAsync(Guid id)
     {
-        throw new NotImplementedException();
+        var result = await _genreRepository.GetFirstAsync(i => i.Id == id);
+        if (result == null)
+            throw new Exception("Genre not found");
+
+        await _genreRepository.DeleteAsync(result);
+
+        return true;
     }
 
-    public Task<List<GenreDto>> GetAllAsync()
+    public async Task<List<GenreDto>> GetAllAsync()
     {
-        throw new NotImplementedException();
+        var result = await _genreRepository.GetAllAsync(_ => true);
+
+        return result.Select(MapToDto).ToList();
     }
 
-    public Task<GenreDto> GetByIdAsync(Guid id)
+    public async Task<GenreDto> GetByIdAsync(Guid id)
     {
-        throw new NotImplementedException();
+        var result = await _genreRepository.GetFirstAsync(i => i.Id == id);
+        if (result == null)
+            throw new Exception("Genre not found");
+
+        return MapToDto(result);
     }
 
-    public Task<GenreDto> UpdateGenreAsync(Guid id, GenreDto userDto)
+    public async Task<GenreDto> UpdateGenreAsync(Guid id, GenreDto dto)
     {
-        throw new NotImplementedException();
+        var result = await _genreRepository.GetFirstAsync(i => i.Id == id);
+        if (result == null)
+            throw new Exception("Genre not found");
+
+        result.Name = dto.Name;
+
+        var update = await _genreRepository.UpdateAsync(result);
+
+        return MapToDto(update);
+    }
+
+    private GenreDto MapToDto(Genre genre)
+    {
+        return new GenreDto
+        {
+            Name = genre.Name
+        };
     }
 }

@@ -1,5 +1,7 @@
-﻿using N_Tier.Core.DTOs;
+﻿using N_Tier.Application.DataTransferObjects;
+using N_Tier.Core.DTOs;
 using N_Tier.Core.Entities;
+using N_Tier.DataAccess.Authentication;
 using N_Tier.DataAccess.Repositories;
 
 namespace N_Tier.Application.Services.Impl;
@@ -7,20 +9,24 @@ namespace N_Tier.Application.Services.Impl;
 public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
+    private readonly IPasswordHasher _passwordHasher;
 
-    public UserService(IUserRepository userRepository)
+    public UserService(IUserRepository userRepository, IPasswordHasher passwordHasher)
     {
         _userRepository = userRepository;
+        _passwordHasher = passwordHasher;
     }
 
     public async Task<UserDto> AddUserAsync(UserDto userDto)
     {
+        string random = Guid.NewGuid().ToString();
+
         var user = new Users
         {
             Name = userDto.Name,
             Email = userDto.Email,
-            Password = userDto.Password,
-            CreatedBy = "System",
+            Password = _passwordHasher.Encrypt(password: userDto.Password, salt: random),
+            Salt = random,
             Accounts = new List<Accounts>
             {
                 new Accounts
@@ -81,6 +87,26 @@ public class UserService : IUserService
         await _userRepository.DeleteAsync(user);
 
         return true;
+    }
+
+
+    public async Task<UserDto> AuthenticateAsync(LoginDto loginDto)
+    {
+        var user = await _userRepository.GetFirstAsync(u => u.Email == loginDto.Email);
+
+        if (user == null)
+        {
+            throw new UnauthorizedAccessException("Invalid email or password.");
+        }
+
+        var isPasswordValid = _passwordHasher.Verify(user.Password, loginDto.Password, user.Salt);
+        
+        if (!isPasswordValid)
+        {
+            throw new UnauthorizedAccessException("Invalid email or password.");
+        }
+
+        return MapToDto(user);
     }
 
 

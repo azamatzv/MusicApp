@@ -3,6 +3,7 @@ using MusicApp.Filters;
 using MusicApp.Middleware;
 using N_Tier.Application;
 using N_Tier.DataAccess;
+using N_Tier.DataAccess.Authentication;
 using N_Tier.DataAccess.Persistence;
 
 
@@ -17,6 +18,8 @@ builder.Services.AddSwagger();
 
 builder.Services.AddDataAccess(builder.Configuration)
     .AddApplication(builder.Environment);
+
+builder.Services.Configure<JwtOption>(builder.Configuration.GetSection("JwtOptions"));
 
 builder.Services.AddJwt(builder.Configuration);
 
@@ -37,6 +40,7 @@ app.UseCors(corsPolicyBuilder =>
         .AllowAnyHeader()
 );
 
+
 app.UseRouting();
 
 app.UseAuthentication();
@@ -52,6 +56,7 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.MapControllers();
 
 app.Run();
+
 
 namespace MusicApp
 {
