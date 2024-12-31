@@ -13,7 +13,6 @@ builder.Services.AddControllers(
     config => config.Filters.Add(typeof(ValidateModelAttribute))
 );
 
-
 builder.Services.AddSwagger();
 
 builder.Services.AddDataAccess(builder.Configuration)

@@ -1,4 +1,5 @@
-﻿using N_Tier.Application.DataTransferObjects;
+﻿using FluentValidation;
+using N_Tier.Application.DataTransferObjects;
 using N_Tier.Core.DTOs;
 using N_Tier.Core.Entities;
 using N_Tier.DataAccess.Authentication;
@@ -10,24 +11,40 @@ public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IValidator<UserDto> _userValidator;
+    private readonly IValidator<LoginDto> _loginValidator;
 
-    public UserService(IUserRepository userRepository, IPasswordHasher passwordHasher)
+    public UserService(
+        IUserRepository userRepository,
+        IPasswordHasher passwordHasher,
+        IValidator<UserDto> userValidator,
+        IValidator<LoginDto> loginValidator)
     {
-        _userRepository = userRepository;
-        _passwordHasher = passwordHasher;
+        _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+        _passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
+        _userValidator = userValidator ?? throw new ArgumentNullException(nameof(userValidator));
+        _loginValidator = loginValidator ?? throw new ArgumentNullException(nameof(loginValidator));
     }
 
     public async Task<UserDto> AddUserAsync(UserDto userDto)
     {
-        string random = Guid.NewGuid().ToString();
-
-        var user = new Users
+        try
         {
-            Name = userDto.Name,
-            Email = userDto.Email,
-            Password = _passwordHasher.Encrypt(password: userDto.Password, salt: random),
-            Salt = random,
-            Accounts = new List<Accounts>
+            var validationResult = await _userValidator.ValidateAsync(userDto);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(validationResult.Errors);
+            }
+
+
+            string salt = Guid.NewGuid().ToString();
+            var user = new Users
+            {
+                Name = userDto.Name,
+                Email = userDto.Email,
+                Password = _passwordHasher.Encrypt(password: userDto.Password, salt: salt),
+                Salt = salt,
+                Accounts = new List<Accounts>
             {
                 new Accounts
                 {
@@ -35,20 +52,48 @@ public class UserService : IUserService
                     TariffTypeId = userDto.TariffId
                 }
             }
-        };
+            };
 
-        var createdUser = await _userRepository.AddAsync(user);
+            var createdUser = await _userRepository.AddAsync(user);
 
-        var account = createdUser.Accounts.FirstOrDefault();
-        if (account != null)
+            var account = createdUser.Accounts.FirstOrDefault();
+            if (account != null)
+            {
+                account.UserId = createdUser.Id;
+                account.Name = createdUser.Name;
+                await _userRepository.UpdateAsync(createdUser);
+            }
+
+            return MapToDto(createdUser);
+        }
+        catch (Exception ex)
         {
-            account.UserId = createdUser.Id;
-            account.Name = createdUser.Name;
+            Console.WriteLine("Error: " + ex.Message, "StackTrace: ", ex.StackTrace + "InnerException: " + ex.InnerException);
+            throw;
+        }
+    }
+
+    public async Task<UserDto> AuthenticateAsync(LoginDto loginDto)
+    {
+        var validationResult = await _loginValidator.ValidateAsync(loginDto);
+        if (!validationResult.IsValid)
+        {
+            throw new ValidationException(validationResult.Errors);
         }
 
-        await _userRepository.UpdateAsync(createdUser);
+        var user = await _userRepository.GetFirstAsync(u => u.Email == loginDto.Email);
+        if (user == null)
+        {
+            throw new UnauthorizedAccessException("Invalid email or password");
+        }
 
-        return MapToDto(createdUser);
+        var isPasswordValid = _passwordHasher.Verify(user.Password, loginDto.Password, user.Salt);
+        if (!isPasswordValid)
+        {
+            throw new UnauthorizedAccessException("Invalid email or password");
+        }
+
+        return MapToDto(user);
     }
 
     public async Task<UserDto> GetByIdAsync(Guid id)
@@ -69,6 +114,7 @@ public class UserService : IUserService
         var user = await _userRepository.GetFirstAsync(u => u.Id == id);
         if (user == null) throw new Exception("User not found");
 
+        user.Name = userDto.Name;
         user.Email = userDto.Email;
         user.Password = userDto.Password;
 
@@ -89,25 +135,6 @@ public class UserService : IUserService
         return true;
     }
 
-
-    public async Task<UserDto> AuthenticateAsync(LoginDto loginDto)
-    {
-        var user = await _userRepository.GetFirstAsync(u => u.Email == loginDto.Email);
-
-        if (user == null)
-        {
-            throw new UnauthorizedAccessException("Invalid email or password.");
-        }
-
-        var isPasswordValid = _passwordHasher.Verify(user.Password, loginDto.Password, user.Salt);
-        
-        if (!isPasswordValid)
-        {
-            throw new UnauthorizedAccessException("Invalid email or password.");
-        }
-
-        return MapToDto(user);
-    }
 
 
     private UserDto MapToDto(Users user)
