@@ -1,4 +1,6 @@
-﻿using N_Tier.Core.DTOs;
+﻿using FluentValidation;
+using N_Tier.Application.DataTransferObjects.Authentication;
+using N_Tier.Core.DTOs;
 using N_Tier.Core.Entities;
 using N_Tier.DataAccess.Authentication;
 using N_Tier.DataAccess.Repositories;
@@ -9,52 +11,88 @@ public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IValidator<UserDto> _userValidator;
+    private readonly IValidator<LoginDto> _loginValidator;
 
-    public UserService(IUserRepository userRepository, IPasswordHasher passwordHasher)
+    public UserService(IUserRepository userRepository,
+                       IPasswordHasher passwordHasher,
+                       IValidator<UserDto> userValidator,
+                       IValidator<LoginDto> loginValidator)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
+        _userValidator = userValidator;
+        _loginValidator = loginValidator;
     }
 
     public async Task<UserDto> AddUserAsync(UserDto userDto)
     {
-
-
-        string randomSalt = Guid.NewGuid().ToString();
-
-        var user = new Users
+        try
         {
-            Name = userDto.Name,
-            Email = userDto.Email,
-            Password = _passwordHasher.Encrypt(
-                password: userDto.Password,
-                salt: randomSalt),
-            CreatedBy = "System",
-            Salt = randomSalt,
-            Accounts = new List<Accounts>
-        {
-            new Accounts
+            var validationResult = await _userValidator.ValidateAsync(userDto);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(validationResult.Errors);
+            }
+
+
+            string salt = Guid.NewGuid().ToString();
+            var user = new Users
             {
                 Name = userDto.Name,
-                TariffTypeId=userDto.TariffId
-
+                Email = userDto.Email,
+                Password = _passwordHasher.Encrypt(password: userDto.Password, salt: salt),
+                Salt = salt,
+                Accounts = new List<Accounts>
+            {
+                new Accounts
+                {
+                    Name = userDto.Name,
+                    TariffTypeId = userDto.TariffId
+                }
             }
+            };
+
+            var createdUser = await _userRepository.AddAsync(user);
+
+            var account = createdUser.Accounts.FirstOrDefault();
+            if (account != null)
+            {
+                account.UserId = createdUser.Id;
+                account.Name = createdUser.Name;
+                await _userRepository.UpdateAsync(createdUser);
+            }
+
+            return MapToDto(createdUser);
         }
-        };
-
-
-        var createdUser = await _userRepository.AddAsync(user);
-
-        var account = createdUser.Accounts.FirstOrDefault();
-        if (account != null)
+        catch (Exception ex)
         {
-            account.UserId = createdUser.Id;
-            account.Name = createdUser.Name;
+            Console.WriteLine("Error: " + ex.Message, "StackTrace: ", ex.StackTrace + "InnerException: " + ex.InnerException);
+            throw;
+        }
+    }
+
+    public async Task<UserDto> AuthenticateAsync(LoginDto loginDto)
+    {
+        var validationResult = await _loginValidator.ValidateAsync(loginDto);
+        if (!validationResult.IsValid)
+        {
+            throw new ValidationException(validationResult.Errors);
         }
 
-        await _userRepository.UpdateAsync(createdUser);
+        var user = await _userRepository.GetFirstAsync(u => u.Email == loginDto.Email);
+        if (user == null)
+        {
+            throw new UnauthorizedAccessException("Invalid email or password");
+        }
 
-        return MapToDto(createdUser);
+        var isPasswordValid = _passwordHasher.Verify(user.Password, loginDto.Password, user.Salt);
+        if (!isPasswordValid)
+        {
+            throw new UnauthorizedAccessException("Invalid email or password");
+        }
+
+        return MapToDto(user);
     }
 
 

@@ -1,4 +1,5 @@
-﻿using N_Tier.Core.DTOs;
+﻿using N_Tier.Application.DataTransferObjects.Authentication;
+using N_Tier.Core.DTOs;
 using N_Tier.Core.Entities;
 
 namespace N_Tier.Application.Services;
@@ -9,5 +10,5 @@ public interface IUserService
     Task<List<UserDto>> GetAllAsync();
     Task<UserDto> AddUserAsync(UserDto userDto);
     Task<UserDto> UpdateUserAsync(Guid id, UserDto userDto);
-
+    Task<UserDto> AuthenticateAsync(LoginDto loginDto);
 }

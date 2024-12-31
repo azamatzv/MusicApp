@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using N_Tier.Application.DataTransferObjects.Authentication;
 using N_Tier.Application.Services;
 using N_Tier.Application.Services.Impl;
 using N_Tier.Core.DTOs;
@@ -51,20 +52,35 @@ namespace MusicApp.Controllers
 
             try
             {
-
-                // Foydalanuvchini yaratish
                 var createdUser = await _userService.AddUserAsync(userDto);
+                return Ok(new { Message = "User successfully registered", User = createdUser });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message, Details = ex.InnerException?.Message });
+            }
+        }
 
-                // Token yaratish
-                var accessToken = _jwtTokenHandler.GenerateAccessToken(createdUser);
+        [HttpPost("SignIn")]
+        public async Task<IActionResult> SignIn([FromBody] LoginDto loginDto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var user = await _userService.AuthenticateAsync(loginDto);
+                if (user == null)
+                    return Unauthorized(new { Message = "Invalid username or password" });
+
+                var accessToken = _jwtTokenHandler.GenerateAccessToken(user);
                 var refreshToken = _jwtTokenHandler.GenerateRefreshToken();
 
-                // Javob shakllantirish
                 return Ok(new
                 {
                     AccessToken = new JwtSecurityTokenHandler().WriteToken(accessToken),
                     RefreshToken = refreshToken,
-                    User = createdUser
+                    User = user
                 });
             }
             catch (Exception ex)
