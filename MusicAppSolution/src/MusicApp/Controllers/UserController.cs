@@ -2,9 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using N_Tier.Application.DataTransferObjects.Authentication;
 using N_Tier.Application.Services;
-using N_Tier.Application.Services.Impl;
 using N_Tier.Core.DTOs;
-using N_Tier.Core.Entities;
 using N_Tier.DataAccess.Authentication;
 using System.IdentityModel.Tokens.Jwt;
 
@@ -44,6 +42,7 @@ namespace MusicApp.Controllers
             return Ok(users);
         }
 
+        [AllowAnonymous]
         [HttpPost("Sign up")]
         public async Task<IActionResult> SignUp([FromBody] UserDto userDto)
         {
@@ -61,6 +60,7 @@ namespace MusicApp.Controllers
             }
         }
 
+        [AllowAnonymous]
         [HttpPost("SignIn")]
         public async Task<IActionResult> SignIn([FromBody] LoginDto loginDto)
         {
@@ -89,24 +89,27 @@ namespace MusicApp.Controllers
             }
         }
 
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UserDto userDto)
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserDto userDto)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(new { Message = "Invalid input data", Errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)) });
 
             try
             {
                 var updatedUser = await _userService.UpdateUserAsync(id, userDto);
-                return Ok(updatedUser);
+                if (updatedUser == null)
+                    return NotFound(new { Message = "User not found" });
+
+                return Ok(new { Message = "User updated successfully", User = updatedUser });
             }
             catch (Exception ex)
             {
-                return NotFound(new { Message = ex.Message });
+                Console.WriteLine($"Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+                return StatusCode(500, new { Message = "An unexpected error occurred", Details = ex.Message });
             }
+
+
         }
-
-
     }
 }

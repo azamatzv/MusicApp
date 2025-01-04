@@ -29,8 +29,14 @@ public static class ApplicationDependencyInjection
         services.AddScoped<IClaimService, ClaimService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<ITariffTypeService, TariffTypeService>();
+        services.AddScoped<IAccountService, AccountService>();
+        services.AddScoped<ICardTypeService, CardTypeService>();
+        services.AddScoped<IMusicService, MusicService>();
+        services.AddScoped<IAuthorService, AuthorService>();
+        services.AddScoped<IGenreService, GenreService>();
         services.AddScoped<IValidator<UserDto>, UserForCreationDtoValidator>();
         services.AddScoped<IValidator<LoginDto>, LoginDtoValidator>();
+        services.AddScoped<IValidator<UpdateUserDto>, UserForUpdateDtoValidator>();
     }
 
 

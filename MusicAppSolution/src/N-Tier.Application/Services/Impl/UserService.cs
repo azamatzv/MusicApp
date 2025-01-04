@@ -13,16 +13,19 @@ public class UserService : IUserService
     private readonly IPasswordHasher _passwordHasher;
     private readonly IValidator<UserDto> _userValidator;
     private readonly IValidator<LoginDto> _loginValidator;
+    private readonly IValidator<UpdateUserDto> _updateUserValidator;
 
     public UserService(IUserRepository userRepository,
                        IPasswordHasher passwordHasher,
                        IValidator<UserDto> userValidator,
-                       IValidator<LoginDto> loginValidator)
+                       IValidator<LoginDto> loginValidator,
+                       IValidator<UpdateUserDto> updateUserValidator)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _userValidator = userValidator;
         _loginValidator = loginValidator;
+        _updateUserValidator = updateUserValidator;
     }
 
     public async Task<UserDto> AddUserAsync(UserDto userDto)
@@ -35,7 +38,6 @@ public class UserService : IUserService
                 throw new ValidationException(validationResult.Errors);
             }
 
-
             string salt = Guid.NewGuid().ToString();
             var user = new Users
             {
@@ -44,13 +46,13 @@ public class UserService : IUserService
                 Password = _passwordHasher.Encrypt(password: userDto.Password, salt: salt),
                 Salt = salt,
                 Accounts = new List<Accounts>
-            {
-                new Accounts
                 {
-                    Name = userDto.Name,
-                    TariffTypeId = userDto.TariffId
+                    new Accounts
+                    {
+                        Name = userDto.Name,
+                        TariffTypeId = userDto.TariffId
+                    }
                 }
-            }
             };
 
             var createdUser = await _userRepository.AddAsync(user);
@@ -109,13 +111,27 @@ public class UserService : IUserService
         return users.Select(MapToDto).ToList();
     }
 
-    public async Task<UserDto> UpdateUserAsync(Guid id, UserDto userDto)
+    public async Task<UserDto> UpdateUserAsync(Guid id, UpdateUserDto userDto)
     {
+        var validationResult = await _updateUserValidator.ValidateAsync(userDto);
+        if (!validationResult.IsValid)
+        {
+            throw new ValidationException(validationResult.Errors);
+        }
         var user = await _userRepository.GetFirstAsync(u => u.Id == id);
         if (user == null) throw new Exception("User not found");
 
-        user.Email = userDto.Email;
-        user.Password = userDto.Password;
+        if (!string.IsNullOrWhiteSpace(userDto.Name))
+            user.Name = userDto.Name;
+        if (!string.IsNullOrWhiteSpace(userDto.Email))
+            user.Email = userDto.Email;
+
+        if (!string.IsNullOrWhiteSpace(userDto.Password))
+        {
+            string newSalt = Guid.NewGuid().ToString();
+            user.Password = _passwordHasher.Encrypt(password: userDto.Password, salt: newSalt);
+            user.Salt = newSalt;
+        }
 
         await _userRepository.UpdateAsync(user);
 

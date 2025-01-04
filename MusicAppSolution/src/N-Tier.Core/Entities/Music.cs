@@ -12,6 +12,8 @@ public class Music : BaseEntity, IAuditedEntity
     public Genre Genre { get; set; }
     public Guid GenreId { get; set; }
 
+    public string FilePath { get; set; }
+
     public string? CreatedBy { get; set; }
 
     public DateTime? CreatedOn { get; set; }

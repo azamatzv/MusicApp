@@ -14,6 +14,8 @@ namespace N_Tier.Core.Entities
         public Users User { get; set; }
         public Guid UserId { get; set; } = Guid.Empty;
 
+        public bool IsDeleted { get; set; } = false;
+
         public string? CreatedBy { get; set; }
 
         public DateTime? CreatedOn { get; set; }

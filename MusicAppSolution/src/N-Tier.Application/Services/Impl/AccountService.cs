@@ -4,7 +4,7 @@ using N_Tier.DataAccess.Repositories;
 
 namespace N_Tier.Application.Services.Impl;
 
-public class AccountService
+public class AccountService : IAccountService
 {
     private readonly IAccountsRepository _accountRepository;
 
@@ -29,10 +29,16 @@ public class AccountService
 
     public async Task<AccountDto> AddAccountAsync(AccountDto accountDto)
     {
+        var existingAccount = await _accountRepository.GetFirstAccountAsync(a => a.UserId == accountDto.UserId);
+        if (existingAccount != null)
+        {
+            throw new Exception("An active account already exists for this UserId");
+        }
+
         var account = new Accounts
         {
             Name = accountDto.Name,
-            TariffType = accountDto.TariffType,
+            TariffTypeId = accountDto.TariffTypeId,
             Balance = accountDto.Balance,
             UserId = accountDto.UserId,
         };
@@ -41,26 +47,37 @@ public class AccountService
         return MapToDto(account);
     }
 
-    public async Task<AccountDto> UpdateAccountAsync(Guid id, AccountDto accountDto)
+    public async Task<AccountDto> UpdateAccountAsync(Guid id, UpdateAccountDto updateAccountDto)
     {
+
         var account = await _accountRepository.GetFirstAsync(a => a.Id == id);
         if (account == null) throw new Exception("Account not found");
 
-        account.Name = accountDto.Name;
-        account.TariffType = accountDto.TariffType;
-        account.Balance = accountDto.Balance;
+        if (!string.IsNullOrEmpty(updateAccountDto.Name))
+        {
+            account.Name = updateAccountDto.Name;
+        }
+
+        if (updateAccountDto.TariffTypeId.HasValue)
+        {
+            account.TariffTypeId = updateAccountDto.TariffTypeId.Value;
+        }
 
         await _accountRepository.UpdateAsync(account);
-        
+
         return MapToDto(account);
     }
 
     public async Task<bool> DeleteAccountAsync(Guid id)
     {
-        var account = await _accountRepository.GetFirstAsync(a => a.Id == id);
-        if (account == null) throw new Exception("Account not found");
+        var account = await _accountRepository.GetFirstAccountAsync(a => a.Id == id && !a.IsDeleted);
+        if (account == null) throw new KeyNotFoundException("Account not found");
 
-        await _accountRepository.DeleteAsync(account);
+        // Soft delete: faqat IsDeleted maydonini true qilib belgilaymiz
+        account.IsDeleted = true;
+        account.UpdatedOn = DateTime.UtcNow; // Yangilangan vaqtni belgilang
+
+        await _accountRepository.UpdateAsync(account); // Yangilangan hisobni saqlaymiz
         return true;
     }
 
@@ -69,7 +86,7 @@ public class AccountService
         return new AccountDto
         {
             Name = account.Name,
-            TariffType = account.TariffType,
+            TariffTypeId = account.TariffTypeId,
             Balance = account.Balance,
             UserId = account.UserId
         };
