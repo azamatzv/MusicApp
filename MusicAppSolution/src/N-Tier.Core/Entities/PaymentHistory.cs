@@ -11,7 +11,7 @@ public class PaymentHistory : BaseEntity, IAuditedEntity
     public Guid AccountsId { get; set; }
 
     public TariffType TariffType { get; set; }
-    public Guid TarifId { get; set; }
+    public Guid TariffTypeId { get; set; }
 
     public bool IsPaid { get; set; } = true;
 

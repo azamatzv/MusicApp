@@ -7,7 +7,7 @@ public class Cards : BaseEntity, IAuditedEntity
     public Users User { get; set; }
     public Guid UserId { get; set; }
 
-    public required int CardNumber { get; set; }
+    public required long CardNumber { get; set; }
 
     public CardType CardType { get; set; }
     public Guid CardTypeId { get; set; }

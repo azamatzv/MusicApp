@@ -34,6 +34,8 @@ public static class ApplicationDependencyInjection
         services.AddScoped<IMusicService, MusicService>();
         services.AddScoped<IAuthorService, AuthorService>();
         services.AddScoped<IGenreService, GenreService>();
+        services.AddScoped<ICardsService, CardService>();
+        services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<IValidator<UserDto>, UserForCreationDtoValidator>();
         services.AddScoped<IValidator<LoginDto>, LoginDtoValidator>();
         services.AddScoped<IValidator<UpdateUserDto>, UserForUpdateDtoValidator>();

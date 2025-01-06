@@ -14,7 +14,7 @@ public class CardService : ICardsService
         _cardTypeRepository = cardTypeRepository;
     }
 
-    private async Task<Guid> DetermineCardType(int cardNumber)
+    private async Task<Guid> DetermineCardType(long cardNumber)
     {
         string cardPrefix = cardNumber.ToString().Substring(0, 4);
 
@@ -29,7 +29,7 @@ public class CardService : ICardsService
 
             // Humo starts with 9860
             var prefix when prefix.StartsWith("9860") =>
-                cardTypes.First(ct => ct.Name.ToLower() == "Humo").Id,
+                cardTypes.First(ct => ct.Name.ToLower() == "humo").Id,
 
             // If no match found, throw an exception
             _ => throw new InvalidOperationException("Unknown card type based on card number prefix")

@@ -20,7 +20,6 @@ namespace N_Tier.Application.Services.Impl
                 Name = genreDto.Name
             };
 
-            // Genre entity'sini qo'shish
             var createdGenre = await _genreRepository.AddAsync(genre);
 
             return new GenreDto

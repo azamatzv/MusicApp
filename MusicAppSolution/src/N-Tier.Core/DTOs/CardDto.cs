@@ -4,8 +4,8 @@
     {
         public Guid UserId { get; set; }
 
-        public int CardNumber { get; set; }
+        public long CardNumber { get; set; }
 
-        public string Expire_Date { get; set; }
+        public string? Expire_Date { get; set; }
     }
 }

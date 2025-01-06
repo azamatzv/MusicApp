@@ -36,7 +36,7 @@ namespace MusicApp.Controllers
             try
             {
                 var fileBytes = await _musicService.PlayMusicAsync(fileName);
-                return File(fileBytes, "audio/mpeg", fileName); // audio/mpeg formatida qaytarish
+                return File(fileBytes, "audio/mpeg", fileName);
             }
             catch (Exception ex)
             {
@@ -44,14 +44,13 @@ namespace MusicApp.Controllers
             }
         }
 
-        // Qo'shiqni yuklab olish uchun faylni qaytarish
         [HttpGet("download/{fileName}")]
         public async Task<IActionResult> DownloadMusic(string fileName)
         {
             try
             {
                 var fileBytes = await _musicService.DownloadMusicAsync(fileName);
-                return File(fileBytes, "application/octet-stream", fileName); // Yuklab olish uchun
+                return File(fileBytes, "application/octet-stream", fileName);
             }
             catch (Exception ex)
             {
