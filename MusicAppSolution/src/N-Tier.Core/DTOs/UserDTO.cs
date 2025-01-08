@@ -13,4 +13,6 @@ public class UserDto
     public string? Email { get; set; }
     [DefaultValue("")]
     public string? Password { get; set; }
+
+    public Role Role { get; set; }
 }

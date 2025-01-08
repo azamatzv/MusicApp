@@ -10,5 +10,5 @@ public interface IUserService
     Task<List<UserDto>> GetAllAsync();
     Task<UserDto> AddUserAsync(UserDto userDto);
     Task<UserDto> UpdateUserAsync(Guid id, UpdateUserDto updateUserDto);
-    Task<UserDto> AuthenticateAsync(LoginDto loginDto);
+    Task<AuthorizationUserDto> AuthenticateAsync(LoginDto loginDto);
 }

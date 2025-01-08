@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using N_Tier.Application.Services;
 using N_Tier.Application.Services.Impl;
 using N_Tier.Core.DTOs;
 
 namespace MusicApp.Controllers
 {
+    [Authorize(Policy = "Admin")]
     public class AccountController : ApiController
     {
         private readonly IAccountService _accountService;

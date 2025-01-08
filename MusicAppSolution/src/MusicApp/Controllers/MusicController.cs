@@ -30,32 +30,48 @@ namespace MusicApp.Controllers
             }
         }
 
-        [HttpGet("play/{fileName}")]
-        public async Task<IActionResult> PlayMusic(string fileName)
+        [HttpGet("play/{musicId}")]
+        public async Task<IActionResult> PlayMusic(Guid musicId)
         {
+            if (musicId == Guid.Empty)
+                return BadRequest(new { Error = "Invalid music ID." });
+
             try
             {
-                var fileBytes = await _musicService.PlayMusicAsync(fileName);
-                return File(fileBytes, "audio/mpeg", fileName);
+                var fileBytes = await _musicService.PlayMusicAsync(musicId);
+                return File(fileBytes, "audio/mpeg");
+            }
+            catch (FileNotFoundException ex)
+            {
+                return NotFound(new { Error = ex.Message });
             }
             catch (Exception ex)
             {
-                return NotFound(new { Error = ex.Message });
+                return StatusCode(500, new { Error = "An unexpected error occurred.", Details = ex.Message });
             }
         }
 
-        [HttpGet("download/{fileName}")]
-        public async Task<IActionResult> DownloadMusic(string fileName)
+        [HttpGet("download/{musicId}")]
+        public async Task<IActionResult> DownloadMusic(Guid musicId, [FromQuery] Guid accountId)
         {
+            if (musicId == Guid.Empty || accountId == Guid.Empty)
+                return BadRequest(new { Error = "Music ID and user ID are required." });
+
             try
             {
-                var fileBytes = await _musicService.DownloadMusicAsync(fileName);
-                return File(fileBytes, "application/octet-stream", fileName);
+                string createdBy = User.Identity?.Name ?? "Anonymous";
+                var fileBytes = await _musicService.DownloadMusicAsync(musicId, accountId, createdBy);
+                return File(fileBytes, "application/octet-stream", $"{musicId}.mp3");
             }
-            catch (Exception ex)
+            catch (FileNotFoundException ex)
             {
                 return NotFound(new { Error = ex.Message });
             }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = "An unexpected error occurred.", Details = ex.Message });
+            }
         }
+
     }
 }

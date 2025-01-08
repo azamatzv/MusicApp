@@ -24,7 +24,7 @@ public class JwtTokenHandler : IJwtTokenHandler
 
 
 
-    public JwtSecurityToken GenerateAccessToken(UserDto user)
+    public JwtSecurityToken GenerateAccessToken(AuthorizationUserDto user)
     {
         if (string.IsNullOrWhiteSpace(jwtOption.SecretKey) ||
     string.IsNullOrWhiteSpace(jwtOption.Issuer) ||
@@ -48,8 +48,10 @@ public class JwtTokenHandler : IJwtTokenHandler
 
         var claims = new List<Claim>
     {
+        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
         new Claim(CustomClaimNames.Email, user.Email),
-
+        new Claim(ClaimTypes.Role, user.Role.ToString()),
+        new Claim("Role", user.Role.ToString())
     };
 
         var authSigningKey = new SymmetricSecurityKey(

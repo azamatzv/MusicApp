@@ -74,7 +74,7 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<UserDto> AuthenticateAsync(LoginDto loginDto)
+    public async Task<AuthorizationUserDto> AuthenticateAsync(LoginDto loginDto)
     {
         var validationResult = await _loginValidator.ValidateAsync(loginDto);
         if (!validationResult.IsValid)
@@ -94,7 +94,7 @@ public class UserService : IUserService
             throw new UnauthorizedAccessException("Invalid email or password");
         }
 
-        return MapToDto(user);
+        return MapTodto(user);
     }
 
 
@@ -138,6 +138,17 @@ public class UserService : IUserService
         return MapToDto(user);
     }
 
+
+    private AuthorizationUserDto MapTodto(Users user)
+    {
+        return new AuthorizationUserDto
+        {
+            Id = user.Id,
+            Email = user.Email,
+            Password = user.Password,
+            Role = user.Role
+        };
+    }
 
 
 

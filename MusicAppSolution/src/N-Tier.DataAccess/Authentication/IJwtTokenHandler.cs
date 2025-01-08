@@ -6,6 +6,6 @@ namespace N_Tier.DataAccess.Authentication;
 
 public interface IJwtTokenHandler
 {
-    JwtSecurityToken GenerateAccessToken(UserDto user);
+    JwtSecurityToken GenerateAccessToken(AuthorizationUserDto user);
     string GenerateRefreshToken();
 }
