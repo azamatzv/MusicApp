@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using N_Tier.Application.Services;
-using N_Tier.Core.DTOs;
+using N_Tier.Core.DTOs.CardTypeDtos;
 using N_Tier.Core.Exceptions;
 
 namespace MusicApp.Controllers
 {
-    public class CardTypeController : ApiController
+    [Route("api/card-types")]
+    public class CardTypeController : ApiControllerBase
     {
         private readonly ICardTypeService _cardTypeService;
 

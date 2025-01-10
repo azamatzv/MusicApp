@@ -1,4 +1,4 @@
-﻿using N_Tier.Core.DTOs;
+﻿using N_Tier.Core.DTOs.AuthorDtos;
 using N_Tier.Core.Entities;
 using System;
 using System.Collections.Generic;

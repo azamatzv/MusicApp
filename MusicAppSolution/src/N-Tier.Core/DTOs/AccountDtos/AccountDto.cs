@@ -1,6 +1,6 @@
 ﻿using N_Tier.Core.Entities;
 
-namespace N_Tier.Core.DTOs;
+namespace N_Tier.Core.DTOs.AccountDto;
 
 public class AccountDto
 {

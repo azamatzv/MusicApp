@@ -1,4 +1,4 @@
-﻿namespace N_Tier.Core.DTOs;
+﻿namespace N_Tier.Core.DTOs.GenreDtos;
 
 public class GenreDto
 {

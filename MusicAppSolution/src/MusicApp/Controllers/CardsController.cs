@@ -1,13 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using N_Tier.Application.Services;
-using N_Tier.Core.DTOs;
+using N_Tier.Core.DTOs.CardDtos;
 using N_Tier.Core.Exceptions;
 
 namespace MusicApp.Controllers
 {
-    // [Authorize]
-    public class CardsController : ApiController
+    [Authorize(Policy = "User")]
+    [Route("api/cards")]
+    public class CardsController : ApiControllerBase
     {
         private readonly ICardsService _cardsService;
 
@@ -42,6 +43,8 @@ namespace MusicApp.Controllers
         {
             try
             {
+                var userId = GetUserIdFromToken();
+                cardDto.UserId = userId;
                 var createdCard = await _cardsService.AddCardAsync(cardDto);
                 return CreatedAtAction(nameof(GetById), new { id = createdCard.UserId }, createdCard);
             }
@@ -51,23 +54,7 @@ namespace MusicApp.Controllers
             }
         }
 
-        [HttpPut("{id}")]
-        public async Task<ActionResult<CardDto>> Update(Guid id, [FromBody] CardDto cardDto)
-        {
-            try
-            {
-                var updatedCard = await _cardsService.UpdateCardAsync(id, cardDto);
-                return Ok(updatedCard);
-            }
-            catch (ResourceNotFoundException)
-            {
-                return NotFound();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
+
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(Guid id)

@@ -18,6 +18,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\N-Tier.Core\N-Tier.Core.csproj" />
 		<ProjectReference Include="..\N-Tier.DataAccess\N-Tier.DataAccess.csproj" />
 	</ItemGroup>
 

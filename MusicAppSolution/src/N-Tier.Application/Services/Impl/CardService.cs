@@ -1,6 +1,9 @@
-﻿using N_Tier.Core.DTOs;
+﻿using N_Tier.Application.Helper;
+using N_Tier.Core.DTOs.CardDtos;
 using N_Tier.Core.Entities;
+using N_Tier.Core.Exceptions;
 using N_Tier.DataAccess.Repositories;
+using System.Globalization;
 
 namespace N_Tier.Application.Services.Impl;
 
@@ -20,18 +23,14 @@ public class CardService : ICardsService
 
         var cardTypes = await _cardTypeRepository.GetAllAsync(x => true);
 
-        // Determine card type based on prefix
         Guid cardTypeId = cardPrefix switch
         {
-            // Uzcard starts with 8600
             var prefix when prefix.StartsWith("8600") =>
-                cardTypes.First(ct => ct.Name.ToLower() == "UzCard").Id,
+                cardTypes.First(ct => ct.Name.ToLower() == PlasticCardTypesConst.UZCARD).Id,
 
-            // Humo starts with 9860
             var prefix when prefix.StartsWith("9860") =>
-                cardTypes.First(ct => ct.Name.ToLower() == "humo").Id,
+                cardTypes.First(ct => ct.Name.ToLower() == PlasticCardTypesConst.HUMO).Id,
 
-            // If no match found, throw an exception
             _ => throw new InvalidOperationException("Unknown card type based on card number prefix")
         };
 
@@ -40,21 +39,29 @@ public class CardService : ICardsService
 
     public async Task<CardDto> AddCardAsync(CardDto cardDto)
     {
-        // Validate card number
         if (cardDto.CardNumber.ToString().Length != 16)
         {
             throw new InvalidOperationException("Card number must be 16 digits");
         }
 
-        // Determine card type based on first 4 digits
+        var existingCard = await _cardsRepository.GetFirstExistCardAsync(x => x.CardNumber == cardDto.CardNumber);
+        if (existingCard != null)
+        {
+            throw new InvalidOperationException("This card number already exists");
+        }
+
+        // Expire date validatsiyasi
+        ValidateExpireDate(cardDto.Expire_Date);
+        var normalizedExpireDate = NormalizeDateTime(cardDto.Expire_Date);
+
         var cardTypeId = await DetermineCardType(cardDto.CardNumber);
 
         var card = new Cards
         {
             UserId = cardDto.UserId,
             CardNumber = cardDto.CardNumber,
-            CardTypeId = cardTypeId, // Set the determined card type
-            Expire_Date = cardDto.Expire_Date,
+            CardTypeId = cardTypeId,
+            Expire_Date = normalizedExpireDate,
             CreatedOn = DateTime.UtcNow
         };
 
@@ -92,32 +99,42 @@ public class CardService : ICardsService
         }).ToList();
     }
 
-    public async Task<CardDto> GetByIdAsync(Guid id)
+    public async Task<List<CardDto>> GetByIdAsync(Guid userId)
     {
-        var card = await _cardsRepository.GetFirstAsync(x => x.Id == id);
-        return new CardDto
+        var cards = await _cardsRepository.GetAllAsync(x => x.UserId == userId);
+
+        return cards.Select(card => new CardDto
         {
             UserId = card.UserId,
             CardNumber = card.CardNumber,
             Expire_Date = card.Expire_Date
-        };
+        }).ToList();
     }
 
-    public async Task<CardDto> UpdateCardAsync(Guid id, CardDto updateCardDto)
+
+    private bool ValidateExpireDate(DateTime expireDate)
     {
-        var existingCard = await _cardsRepository.GetFirstAsync(x => x.Id == id);
+        // Kunni 1-kunga o'rnatamiz (faqat oy va yil muhim)
+        var normalizedExpireDate = new DateTime(expireDate.Year, expireDate.Month, 1);
 
-        existingCard.UserId = updateCardDto.UserId;
-        existingCard.CardNumber = updateCardDto.CardNumber;
-        existingCard.Expire_Date = updateCardDto.Expire_Date;
-        existingCard.UpdatedOn = DateTime.UtcNow;
+        // Hozirgi oyning 1-kuni bilan solishtiramiz
+        var currentDate = DateTime.Now;
+        var firstDayOfCurrentMonth = new DateTime(currentDate.Year, currentDate.Month, 1);
 
-        var updatedCard = await _cardsRepository.UpdateAsync(existingCard);
-        return new CardDto
-        {
-            UserId = updatedCard.UserId,
-            CardNumber = updatedCard.CardNumber,
-            Expire_Date = updatedCard.Expire_Date
-        };
+        if (normalizedExpireDate < firstDayOfCurrentMonth)
+            throw new InvalidOperationException("Expiration date cannot be in the past");
+
+        // Kartaning maksimal amal qilish muddati (masalan 10 yil)
+        var maxValidDate = firstDayOfCurrentMonth.AddYears(10);
+        if (normalizedExpireDate > maxValidDate)
+            throw new InvalidOperationException("Card expiration date cannot be more than 10 years in the future");
+
+        return true;
+    }
+
+    private DateTime NormalizeDateTime(DateTime expireDate)
+    {
+        // Kunni 1-kunga o'rnatamiz, vaqtni 00:00:00 ga
+        return new DateTime(expireDate.Year, expireDate.Month, 1, 0, 0, 0, DateTimeKind.Utc);
     }
 }

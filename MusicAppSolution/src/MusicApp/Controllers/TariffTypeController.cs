@@ -2,14 +2,15 @@
 using Microsoft.AspNetCore.Mvc;
 using N_Tier.Application.Services;
 using N_Tier.Application.Services.Impl;
-using N_Tier.Core.DTOs;
+using N_Tier.Core.DTOs.TariffTypeDtos;
 using N_Tier.Core.Entities;
 
 namespace MusicApp.Controllers
 {
 
     //[Authorize]
-    public class TariffTypeController : ApiController
+    [Route("api/TariffType")]
+    public class TariffTypeController : ApiControllerBase
     {
         private readonly ITariffTypeService _tariffTypeService;
 
@@ -35,6 +36,24 @@ namespace MusicApp.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "An error occurred while adding the tariff.", details = ex.Message });
+            }
+        }
+
+        [HttpGet("GetAllTariffs")]
+        public IActionResult GetAllTariffs()
+        {
+            try
+            {
+                var tariffs = _tariffTypeService.GetTariffsAsync();
+                if (!tariffs.Any())
+                {
+                    return NotFound("Tariffs not found.");
+                }
+                return Ok(tariffs);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
 

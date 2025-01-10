@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
 using N_Tier.Application.DataTransferObjects.Authentication;
-using N_Tier.Core.DTOs;
+using N_Tier.Core.DTOs.UserDtos;
 using N_Tier.Core.Entities;
 using N_Tier.DataAccess.Authentication;
 using N_Tier.DataAccess.Repositories;
@@ -28,7 +28,7 @@ public class UserService : IUserService
         _updateUserValidator = updateUserValidator;
     }
 
-    public async Task<UserDto> AddUserAsync(UserDto userDto)
+    public async Task<UserResponceDto> AddUserAsync(UserDto userDto)
     {
         try
         {
@@ -46,13 +46,13 @@ public class UserService : IUserService
                 Password = _passwordHasher.Encrypt(password: userDto.Password, salt: salt),
                 Salt = salt,
                 Accounts = new List<Accounts>
+            {
+                new Accounts
                 {
-                    new Accounts
-                    {
-                        Name = userDto.Name,
-                        TariffTypeId = userDto.TariffId
-                    }
+                    Name = userDto.Name,
+                    TariffTypeId = userDto.TariffId
                 }
+            }
             };
 
             var createdUser = await _userRepository.AddAsync(user);
@@ -65,7 +65,13 @@ public class UserService : IUserService
                 await _userRepository.UpdateAsync(createdUser);
             }
 
-            return MapToDto(createdUser);
+            return new UserResponceDto
+            {
+                Name = createdUser.Name,
+                Email = createdUser.Email,
+                Role = createdUser.Role.ToString(),
+                TariffId = account?.TariffTypeId ?? Guid.Empty
+            };
         }
         catch (Exception ex)
         {

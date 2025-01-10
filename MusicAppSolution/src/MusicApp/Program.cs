@@ -8,9 +8,11 @@ using N_Tier.DataAccess.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Service registrations
 builder.Services.AddControllers(
     config => config.Filters.Add(typeof(ValidateModelAttribute))
 );
@@ -22,16 +24,27 @@ builder.Services.AddDataAccess(builder.Configuration)
 
 builder.Services.Configure<JwtOption>(builder.Configuration.GetSection("JwtOptions"));
 
+// CORS configuration
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
+// Authorization policies
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("User", policy =>
         policy.RequireRole("Role", "User"));
     options.AddPolicy("Admin", policy =>
         policy.RequireRole("Role", "Admin"));
-
 });
 
-
+// JWT Authentication
 var jwtOption = builder.Configuration.GetSection("JwtOptions").Get<JwtOption>();
 builder.Services.AddAuthentication(options =>
 {
@@ -48,28 +61,35 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = jwtOption.Issuer,
         ValidAudience = jwtOption.Audience,
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(jwtOption.SecretKey))
+            Encoding.UTF8.GetBytes(jwtOption.SecretKey)),
+        NameClaimType = ClaimTypes.NameIdentifier,
+        RoleClaimType = "Role"
     };
 });
 
-builder.Services.AddAuthorization();
-
 var app = builder.Build();
 
+// Database migration
 using var scope = app.Services.CreateScope();
 await AutomatedMigration.MigrateAsync(scope.ServiceProvider);
 
-app.UseSwagger();
-app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "N-Tier V1"); });
+// Environment-specific middleware
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "N-Tier V1"); });
+    app.UseDeveloperExceptionPage();
+}
+else
+{
+    app.UseExceptionHandler("/Error");
+    app.UseHsts();
+}
 
+// Middleware pipeline
 app.UseHttpsRedirection();
-
-app.UseCors(corsPolicyBuilder =>
-    corsPolicyBuilder.AllowAnyOrigin()
-        .AllowAnyMethod()
-        .AllowAnyHeader()
-);
-
+app.UseStaticFiles();
+app.UseCors();
 app.UseRouting();
 
 app.UseAuthentication();

@@ -1,4 +1,4 @@
-﻿using N_Tier.Core.DTOs;
+﻿using N_Tier.Core.DTOs.AccountDto;
 using N_Tier.Core.Entities;
 using N_Tier.DataAccess.Repositories;
 

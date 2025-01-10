@@ -3,7 +3,7 @@ using N_Tier.Application.Services;
 
 namespace MusicApp.Controllers
 {
-    public class MusicController : ApiController
+    public class MusicController : ApiControllerBase
     {
         private readonly IMusicService _musicService;
 

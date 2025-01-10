@@ -1,4 +1,4 @@
-﻿using N_Tier.Core.DTOs;
+﻿using N_Tier.Core.DTOs.PaymentDtos;
 using N_Tier.Core.Entities;
 using N_Tier.Core.Exceptions;
 using N_Tier.DataAccess.Repositories;

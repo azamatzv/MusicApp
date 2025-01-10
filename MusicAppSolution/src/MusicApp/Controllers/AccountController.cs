@@ -2,12 +2,13 @@
 using Microsoft.AspNetCore.Mvc;
 using N_Tier.Application.Services;
 using N_Tier.Application.Services.Impl;
-using N_Tier.Core.DTOs;
+using N_Tier.Core.DTOs.AccountDto;
 
 namespace MusicApp.Controllers
 {
-    [Authorize(Policy = "Admin")]
-    public class AccountController : ApiController
+    [Authorize(Policy = "User")]
+    [Route("api/accounts")]
+    public class AccountController : ApiControllerBase
     {
         private readonly IAccountService _accountService;
 

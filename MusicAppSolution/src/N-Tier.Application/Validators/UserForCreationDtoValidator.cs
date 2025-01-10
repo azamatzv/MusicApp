@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using N_Tier.Core.DTOs;
+using N_Tier.Core.DTOs.UserDtos;
 
 namespace N_Tier.Application.Validators;
 

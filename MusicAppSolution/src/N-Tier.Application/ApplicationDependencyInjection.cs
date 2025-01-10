@@ -5,7 +5,7 @@ using N_Tier.Application.DataTransferObjects.Authentication;
 using N_Tier.Application.Services;
 using N_Tier.Application.Services.Impl;
 using N_Tier.Application.Validators;
-using N_Tier.Core.DTOs;
+using N_Tier.Core.DTOs.UserDtos;
 using N_Tier.DataAccess.Authentication;
 using N_Tier.Shared.Services;
 using N_Tier.Shared.Services.Impl;

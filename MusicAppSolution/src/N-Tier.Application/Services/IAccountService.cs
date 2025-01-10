@@ -1,4 +1,4 @@
-﻿using N_Tier.Core.DTOs;
+﻿using N_Tier.Core.DTOs.AccountDto;
 
 namespace N_Tier.Application.Services;
 

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace N_Tier.Core.DTOs;
+namespace N_Tier.Core.DTOs.UserDtos;
 
 public class UpdateUserDto
 {

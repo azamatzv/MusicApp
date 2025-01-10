@@ -1,7 +1,8 @@
 ﻿using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using N_Tier.Core.DTOs;
+using N_Tier.Core.DTOs.UserDtos;
 using N_Tier.Core.Entities;
+using N_Tier.DataAccess.Repositories;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -16,15 +17,17 @@ namespace N_Tier.DataAccess.Authentication;
 public class JwtTokenHandler : IJwtTokenHandler
 {
     private readonly JwtOption jwtOption;
+    private readonly IAccountsRepository _accountsRepository;
 
-    public JwtTokenHandler(IOptions<JwtOption> options)
+    public JwtTokenHandler(IOptions<JwtOption> options, IAccountsRepository accountsRepository)
     {
+        _accountsRepository = accountsRepository;
         this.jwtOption = options.Value;
     }
 
 
 
-    public JwtSecurityToken GenerateAccessToken(AuthorizationUserDto user)
+    public async Task<JwtSecurityToken> GenerateAccessToken(AuthorizationUserDto user)
     {
         if (string.IsNullOrWhiteSpace(jwtOption.SecretKey) ||
     string.IsNullOrWhiteSpace(jwtOption.Issuer) ||
@@ -45,12 +48,16 @@ public class JwtTokenHandler : IJwtTokenHandler
         if (string.IsNullOrWhiteSpace(jwtOption.SecretKey))
             throw new ArgumentNullException(nameof(jwtOption.SecretKey), "SecretKey cannot be null or empty.");
 
+        var account = await _accountsRepository.GetFirstAsync(a => a.UserId == user.Id);
+        if (account == null)
+            throw new Exception("No account found for user");
 
         var claims = new List<Claim>
     {
         new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
         new Claim(CustomClaimNames.Email, user.Email),
-        new Claim(ClaimTypes.Role, user.Role.ToString()),
+        new Claim(CustomClaimNames.AccountId, account.Id.ToString()),
+        //new Claim(ClaimTypes.Role, user.Role.ToString()),
         new Claim("Role", user.Role.ToString())
     };
 

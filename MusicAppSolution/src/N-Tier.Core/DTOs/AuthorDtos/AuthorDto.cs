@@ -1,4 +1,4 @@
-﻿namespace N_Tier.Core.DTOs;
+﻿namespace N_Tier.Core.DTOs.AuthorDtos;
 
 public class AuthorDto
 {

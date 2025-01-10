@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using N_Tier.Application.DataTransferObjects.Authentication;
 using N_Tier.Application.Services;
-using N_Tier.Core.DTOs;
+using N_Tier.Core.DTOs.UserDtos;
 using N_Tier.DataAccess.Authentication;
 using System.IdentityModel.Tokens.Jwt;
 
@@ -10,7 +10,8 @@ namespace MusicApp.Controllers
 {
 
     //[Authorize]
-    public class UserController : ApiController
+    [Route("api/users")]
+    public class UserController : ApiControllerBase
     {
         private readonly IUserService _userService;
         private readonly IJwtTokenHandler _jwtTokenHandler;
@@ -73,7 +74,7 @@ namespace MusicApp.Controllers
                 if (user == null)
                     return Unauthorized(new { Message = "Invalid username or password" });
 
-                var accessToken = _jwtTokenHandler.GenerateAccessToken(user);
+                var accessToken = await _jwtTokenHandler.GenerateAccessToken(user);
                 var refreshToken = _jwtTokenHandler.GenerateRefreshToken();
 
                 return Ok(new

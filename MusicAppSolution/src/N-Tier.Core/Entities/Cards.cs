@@ -12,7 +12,7 @@ public class Cards : BaseEntity, IAuditedEntity
     public CardType CardType { get; set; }
     public Guid CardTypeId { get; set; }
 
-    public required string Expire_Date { get; set; }
+    public DateTime Expire_Date { get; set; }
 
     public string? CreatedBy { get; set; }
 

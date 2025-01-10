@@ -1,4 +1,4 @@
-﻿using N_Tier.Core.DTOs;
+﻿using N_Tier.Core.DTOs.PaymentDtos;
 using System;
 using System.Collections.Generic;
 using System.Linq;

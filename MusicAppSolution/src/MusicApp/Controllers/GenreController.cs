@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using N_Tier.Application.Services;
-using N_Tier.Core.DTOs;
+using N_Tier.Core.DTOs.GenreDtos;
 using N_Tier.Core.Entities;
 
 namespace MusicApp.Controllers
 {
-    public class GenreController : ApiController
+    public class GenreController : ApiControllerBase
     {
         private readonly IGenreService _genreService;
 

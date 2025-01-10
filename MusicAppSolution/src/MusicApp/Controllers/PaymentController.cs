@@ -1,11 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using N_Tier.Application.Services;
-using N_Tier.Core.DTOs;
+using N_Tier.Core.DTOs.PaymentDtos;
 using N_Tier.Core.Exceptions;
 
 namespace MusicApp.Controllers
 {
-    public class PaymentController : ApiController
+    [Authorize(Policy = "User")]
+    public class PaymentController : ApiControllerBase
     {
         private readonly IPaymentService _paymentService;
 
@@ -15,16 +17,26 @@ namespace MusicApp.Controllers
         }
 
         [HttpPost("make-payment")]
-        public async Task<ActionResult<PaymentResponseDTO>> MakePayment([FromBody] MakePaymentDTO paymentDto)
+        public async Task<ActionResult<PaymentResponseDTO>> MakePayment()
         {
             try
             {
+                var accountId = GetAccountIdFromToken();
+
+                var paymentDto = new MakePaymentDTO
+                {
+                    AccountId = accountId
+                };
                 var result = await _paymentService.MakePayment(paymentDto);
                 if (!result.Success)
                 {
                     return BadRequest(result);
                 }
                 return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
             }
             catch (ResourceNotFoundException ex)
             {
@@ -41,6 +53,8 @@ namespace MusicApp.Controllers
         {
             try
             {
+                var userId = GetUserIdFromToken();
+                topUpDto.UserId = userId;
                 var result = await _paymentService.TopUpBalance(topUpDto);
                 return Ok(result);
             }

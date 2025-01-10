@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using N_Tier.Application.Services;
-using N_Tier.Core.DTOs;
+using N_Tier.Core.DTOs.AuthorDtos;
 using N_Tier.Core.Entities;
 
 namespace MusicApp.Controllers
 {
-    public class AuthorController : ApiController
+    public class AuthorController : ApiControllerBase
     {
         private readonly IAuthorService _authorService;
 

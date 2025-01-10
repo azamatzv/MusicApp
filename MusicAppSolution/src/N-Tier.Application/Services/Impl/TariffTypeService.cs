@@ -1,4 +1,4 @@
-﻿using N_Tier.Core.DTOs;
+﻿using N_Tier.Core.DTOs.TariffTypeDtos;
 using N_Tier.Core.Entities;
 using N_Tier.DataAccess.Repositories;
 
@@ -13,7 +13,7 @@ public class TariffTypeService : ITariffTypeService
         _repository = repository;
     }
 
-    public async Task<TariffType> AddTariffAsync(TariffTypeDto tariffTypeDto)
+    public async Task<TariffTypeResponseDto> AddTariffAsync(TariffTypeDto tariffTypeDto)
     {
         var tariff = new TariffType
         {
@@ -21,12 +21,28 @@ public class TariffTypeService : ITariffTypeService
             Amount = tariffTypeDto.Amount,
         };
         await _repository.AddAsync(tariff);
-        return MapToDto(tariff);
+        return new TariffTypeResponseDto
+        {
+            Id = tariff.Id,
+            Name = tariff.Name,
+            Amount = tariff.Amount
+        };
     }
 
     public async Task<TariffType?> GetTariffByIdAsync(Guid id)
     {
         return await _repository.GetFirstAsync(a => a.Id == id);
+    }
+
+    public IEnumerable<TariffTypeResponseDto> GetTariffsAsync()
+    {
+        var tariffs = _repository.GetAllAsEnumurable();
+        return tariffs.Select(t => new TariffTypeResponseDto
+        {
+            Id = t.Id,
+            Name = t.Name,
+            Amount = t.Amount
+        });
     }
 
     private TariffType MapToDto(TariffType tariffType)
