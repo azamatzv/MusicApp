@@ -6,7 +6,6 @@ using N_Tier.Application.Services;
 using N_Tier.Application.Services.Impl;
 using N_Tier.Application.Validators;
 using N_Tier.Core.DTOs.UserDtos;
-using N_Tier.DataAccess.Authentication;
 using N_Tier.Shared.Services;
 using N_Tier.Shared.Services.Impl;
 
@@ -36,6 +35,7 @@ public static class ApplicationDependencyInjection
         services.AddScoped<IGenreService, GenreService>();
         services.AddScoped<ICardsService, CardService>();
         services.AddScoped<IPaymentService, PaymentService>();
+        services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IValidator<UserDto>, UserForCreationDtoValidator>();
         services.AddScoped<IValidator<LoginDto>, LoginDtoValidator>();
         services.AddScoped<IValidator<UpdateUserDto>, UserForUpdateDtoValidator>();

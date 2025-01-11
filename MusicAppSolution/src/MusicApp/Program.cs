@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Security.Claims;
+using N_Tier.Application.QuartzConfigPayment;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -66,6 +67,8 @@ builder.Services.AddAuthentication(options =>
         RoleClaimType = "Role"
     };
 });
+
+builder.Services.AddQuartzJobs();
 
 var app = builder.Build();
 

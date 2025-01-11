@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using N_Tier.Application.Services;
 using N_Tier.Core.DTOs.AuthorDtos;
 using N_Tier.Core.Entities;
 
 namespace MusicApp.Controllers
 {
+    [Route("api/authors")]
+    [Authorize(Policy = "User")]
     public class AuthorController : ApiControllerBase
     {
         private readonly IAuthorService _authorService;

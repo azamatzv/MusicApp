@@ -11,6 +11,7 @@ namespace MusicApp.Controllers
 
     //[Authorize]
     [Route("api/users")]
+    [Authorize(Policy = "User")]
     public class UserController : ApiControllerBase
     {
         private readonly IUserService _userService;

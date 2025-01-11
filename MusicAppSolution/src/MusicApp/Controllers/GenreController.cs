@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using N_Tier.Application.Services;
 using N_Tier.Core.DTOs.GenreDtos;
 using N_Tier.Core.Entities;
 
 namespace MusicApp.Controllers
 {
+    [Route("api/genre")]
+    [Authorize(Policy = "User")]
     public class GenreController : ApiControllerBase
     {
         private readonly IGenreService _genreService;

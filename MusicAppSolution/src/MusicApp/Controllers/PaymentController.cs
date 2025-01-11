@@ -10,10 +10,12 @@ namespace MusicApp.Controllers
     public class PaymentController : ApiControllerBase
     {
         private readonly IPaymentService _paymentService;
+        private readonly IConfiguration _configuration;
 
-        public PaymentController(IPaymentService paymentService)
+        public PaymentController(IPaymentService paymentService, IConfiguration configuration)
         {
             _paymentService = paymentService;
+            _configuration = configuration;
         }
 
         [HttpPost("make-payment")]
@@ -65,6 +67,77 @@ namespace MusicApp.Controllers
             catch (Exception)
             {
                 return StatusCode(500, new { message = "An error occurred while topping up the balance" });
+            }
+        }
+
+        [HttpGet("payment-history")]
+        public async Task<ActionResult<IEnumerable<PaymentHistoryDTO>>> GetPaymentHistory()
+        {
+            try
+            {
+                var accountId = GetAccountIdFromToken();
+                var history = await _paymentService.GetPaymentHistory(accountId);
+                return Ok(history);
+            }
+            catch (ResourceNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { message = "An error occurred while retrieving payment history" });
+            }
+        }
+
+        // Test endpoints - only available in Development environment
+        [HttpPost("test/trigger-monthly-payment")]
+        //[Authorize(Policy = "Admin")]
+        public async Task<ActionResult> TriggerMonthlyPayment()
+        {
+            //if (!_configuration.GetValue<bool>("AllowTestEndpoints"))
+            //{
+            //    return NotFound();
+            //}
+
+            try
+            {
+                var accountId = GetAccountIdFromToken();
+
+                await _paymentService.ProcessAutomaticMonthlyPayment(accountId);
+                return Ok(new { message = "Monthly payment processed successfully" });
+            }
+            catch (ResourceNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { message = "An error occurred while processing test payment" });
+            }
+        }
+
+        [HttpPost("test/trigger-low-balance-notification")]
+        //[Authorize(Policy = "Admin")]
+        public async Task<ActionResult> TriggerLowBalanceNotification()
+        {
+            //if (!_configuration.GetValue<bool>("AllowTestEndpoints"))
+            //{
+            //    return NotFound();
+            //}
+
+            try
+            {
+                var accountId = GetAccountIdFromToken();
+                await _paymentService.CheckAndNotifyLowBalance(accountId);
+                return Ok(new { message = "Low balance notification check completed" });
+            }
+            catch (ResourceNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { message = "An error occurred while processing notification test" });
             }
         }
     }

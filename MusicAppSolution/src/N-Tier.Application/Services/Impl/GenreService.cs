@@ -28,12 +28,13 @@ namespace N_Tier.Application.Services.Impl
             };
         }
 
-        public async Task<IEnumerable<GenreDto>> GetAllGenresAsync()
+        public async Task<IEnumerable<ResponceGenreDto>> GetAllGenresAsync()
         {
             var genres = await _genreRepository.GetAllAsync(g => true);
 
-            return genres.Select(genre => new GenreDto
+            return genres.Select(genre => new ResponceGenreDto
             {
+                Id = genre.Id,
                 Name = genre.Name
             });
         }

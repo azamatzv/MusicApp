@@ -12,7 +12,10 @@ namespace N_Tier.DataAccess.Persistence;
 public class DatabaseContext : IdentityDbContext<ApplicationUser>
 {
     private readonly IClaimService _claimService;
+    public DatabaseContext()
+    {
 
+    }
     public DatabaseContext(DbContextOptions options, IClaimService claimService) : base(options)
     {
         _claimService = claimService;
@@ -32,6 +35,7 @@ public class DatabaseContext : IdentityDbContext<ApplicationUser>
     public DbSet<PaymentHistory> PaymentHistories { get; set; }
     public DbSet<TariffType> TariffTypes { get; set; }
     public DbSet<Users> Users { get; set; }
+    public DbSet<OtpVerification> OtpVerifications { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -58,6 +62,7 @@ public class DatabaseContext : IdentityDbContext<ApplicationUser>
 
         return await base.SaveChangesAsync(cancellationToken);
     }
+
 
 
 }

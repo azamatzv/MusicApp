@@ -10,6 +10,7 @@ namespace MusicApp.Controllers
 
     //[Authorize]
     [Route("api/TariffType")]
+    [Authorize(Policy = "User")]
     public class TariffTypeController : ApiControllerBase
     {
         private readonly ITariffTypeService _tariffTypeService;

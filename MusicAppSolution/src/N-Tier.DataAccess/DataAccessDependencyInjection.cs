@@ -9,6 +9,8 @@ using N_Tier.DataAccess.Identity;
 using N_Tier.DataAccess.Repositories.Impl;
 using N_Tier.DataAccess.Repositories;
 using N_Tier.DataAccess.Authentication;
+using N_Tier.Shared.Services.Impl;
+using N_Tier.Shared.Services;
 
 namespace N_Tier.DataAccess;
 
@@ -78,7 +80,5 @@ public static class DataAccessDependencyInjection
 
 public class DatabaseConfiguration
 {
-    public bool UseInMemoryDatabase { get; set; }
-
     public string ConnectionString { get; set; }
 }

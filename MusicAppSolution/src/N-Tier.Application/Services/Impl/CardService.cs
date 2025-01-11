@@ -114,17 +114,14 @@ public class CardService : ICardsService
 
     private bool ValidateExpireDate(DateTime expireDate)
     {
-        // Kunni 1-kunga o'rnatamiz (faqat oy va yil muhim)
         var normalizedExpireDate = new DateTime(expireDate.Year, expireDate.Month, 1);
 
-        // Hozirgi oyning 1-kuni bilan solishtiramiz
         var currentDate = DateTime.Now;
         var firstDayOfCurrentMonth = new DateTime(currentDate.Year, currentDate.Month, 1);
 
         if (normalizedExpireDate < firstDayOfCurrentMonth)
             throw new InvalidOperationException("Expiration date cannot be in the past");
 
-        // Kartaning maksimal amal qilish muddati (masalan 10 yil)
         var maxValidDate = firstDayOfCurrentMonth.AddYears(10);
         if (normalizedExpireDate > maxValidDate)
             throw new InvalidOperationException("Card expiration date cannot be more than 10 years in the future");
@@ -134,7 +131,6 @@ public class CardService : ICardsService
 
     private DateTime NormalizeDateTime(DateTime expireDate)
     {
-        // Kunni 1-kunga o'rnatamiz, vaqtni 00:00:00 ga
         return new DateTime(expireDate.Year, expireDate.Month, 1, 0, 0, 0, DateTimeKind.Utc);
     }
 }

@@ -11,4 +11,7 @@ public interface IPaymentService
 {
     Task<PaymentResponseDTO> MakePayment(MakePaymentDTO paymentDto);
     Task<PaymentResponseDTO> TopUpBalance(TopUpBalanceDTO topUpDto);
+    Task ProcessAutomaticMonthlyPayment(Guid accountId);
+    Task CheckAndNotifyLowBalance(Guid accountId);
+    Task<IEnumerable<PaymentHistoryDTO>> GetPaymentHistory(Guid accountId);
 }

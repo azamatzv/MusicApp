@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using N_Tier.Application.Services;
 
 namespace MusicApp.Controllers
 {
+    [Route("api/music")]
+    [Authorize(Policy = "User")]
     public class MusicController : ApiControllerBase
     {
         private readonly IMusicService _musicService;

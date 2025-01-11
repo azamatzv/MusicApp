@@ -17,7 +17,6 @@ public class AccountRepository : BaseRepository<Accounts>, IAccountsRepository
     public async Task<Accounts> GetFirstAccountAsync(Expression<Func<Accounts, bool>> predicate)
     {
         return await context.Accounts
-
         .FirstOrDefaultAsync(predicate);
     }
 }
