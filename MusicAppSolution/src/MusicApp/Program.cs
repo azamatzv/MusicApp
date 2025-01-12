@@ -10,8 +10,13 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Security.Claims;
 using N_Tier.Application.QuartzConfigPayment;
+using N_Tier.Application.DataTransferObjects;
 
 var builder = WebApplication.CreateBuilder(args);
+
+#region Email Configuration
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
+#endregion
 
 // Service registrations
 builder.Services.AddControllers(

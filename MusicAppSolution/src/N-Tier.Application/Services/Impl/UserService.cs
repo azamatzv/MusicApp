@@ -8,11 +8,14 @@ using System.Net.Mail;
 using System.Net;
 using SendGrid;
 using SendGrid.Helpers.Mail;
+using N_Tier.Application.DataTransferObjects;
+using Microsoft.Extensions.Options;
 
 namespace N_Tier.Application.Services.Impl;
 
 public class UserService : IUserService
 {
+    private readonly SmtpSettings _smtpSettings;
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IValidator<UserDto> _userValidator;
@@ -25,7 +28,8 @@ public class UserService : IUserService
                        IValidator<UserDto> userValidator,
                        IValidator<LoginDto> loginValidator,
                        IValidator<UpdateUserDto> updateUserValidator,
-                       IOtpRepository otpRepository)
+                       IOtpRepository otpRepository,
+                       IOptions<SmtpSettings> smtpSettings)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
@@ -33,32 +37,35 @@ public class UserService : IUserService
         _loginValidator = loginValidator;
         _updateUserValidator = updateUserValidator;
         _otpRepository = otpRepository;
+        _smtpSettings = smtpSettings.Value;
     }
 
     private async Task SendOtpEmailAsync(string email, string otpCode)
     {
-        var apiKey = "your-sendgrid-api-key"; // API kalitingizni bu yerga kiriting
-        var client = new SendGridClient(apiKey);
-
-        var from = new EmailAddress("your-email@example.com", "Your App Name");
-        var subject = "Email Verification OTP";
-        var to = new EmailAddress(email);
-        var plainTextContent = $"Your verification code is: {otpCode}. This code will expire in 10 minutes.";
-        var htmlContent = $"<strong>Your verification code is: {otpCode}. This code will expire in 10 minutes.</strong>";
-
-        var message = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
-
         try
         {
-            var response = await client.SendEmailAsync(message);
-            if (response.StatusCode == System.Net.HttpStatusCode.Accepted)
+            var smtpClient = new SmtpClient(_smtpSettings.Server)
             {
-                Console.WriteLine("Email muvaffaqiyatli yuborildi.");
-            }
-            else
+                Port = _smtpSettings.Port,
+                Credentials = new NetworkCredential(_smtpSettings.Username, _smtpSettings.Password),
+                EnableSsl = true,
+            };
+
+            var subject = "Email Verification OTP";
+            var htmlContent = $"<strong>Your verification code is: {otpCode}. This code will expire in 10 minutes.</strong>";
+
+            var mailMessage = new MailMessage
             {
-                Console.WriteLine($"Email yuborishda xato: {response.StatusCode}");
-            }
+                From = new MailAddress(_smtpSettings.SenderEmail, _smtpSettings.SenderName),
+                Subject = subject,
+                Body = htmlContent,
+                IsBodyHtml = true,
+            };
+
+            mailMessage.To.Add(email);
+            await smtpClient.SendMailAsync(mailMessage);
+
+            Console.WriteLine("Email muvaffaqiyatli yuborildi.");
         }
         catch (Exception ex)
         {
