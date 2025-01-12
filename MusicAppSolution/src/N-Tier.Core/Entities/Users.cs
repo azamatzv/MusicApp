@@ -14,6 +14,8 @@ public class Users : BaseEntity, IAuditedEntity
 
     public string Salt { get; set; }
 
+    public bool IsEmailVerified { get; set; } = false;
+
     public ICollection<Accounts> Accounts { get; set; }
 
     public ICollection<Cards> Cards { get; set; }

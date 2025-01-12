@@ -45,16 +45,16 @@ namespace MusicApp.Controllers
         }
 
         [AllowAnonymous]
-        [HttpPost("Sign up")]
-        public async Task<IActionResult> SignUp([FromBody] UserDto userDto)
+        [HttpPost("initiate-registration")]
+        public async Task<IActionResult> InitiateRegistration([FromBody] UserDto userDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             try
             {
-                var createdUser = await _userService.AddUserAsync(userDto);
-                return Ok(new { Message = "User successfully registered", User = createdUser });
+                var (userId, message) = await _userService.InitiateUserRegistrationAsync(userDto);
+                return Ok(new { UserId = userId, Message = message });
             }
             catch (Exception ex)
             {
@@ -63,27 +63,16 @@ namespace MusicApp.Controllers
         }
 
         [AllowAnonymous]
-        [HttpPost("SignIn")]
-        public async Task<IActionResult> SignIn([FromBody] LoginDto loginDto)
+        [HttpPost("verify-registration")]
+        public async Task<IActionResult> VerifyRegistration([FromBody] VerifyRegistrationDto dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             try
             {
-                var user = await _userService.AuthenticateAsync(loginDto);
-                if (user == null)
-                    return Unauthorized(new { Message = "Invalid username or password" });
-
-                var accessToken = await _jwtTokenHandler.GenerateAccessToken(user);
-                var refreshToken = _jwtTokenHandler.GenerateRefreshToken();
-
-                return Ok(new
-                {
-                    AccessToken = new JwtSecurityTokenHandler().WriteToken(accessToken),
-                    RefreshToken = refreshToken,
-                    User = user
-                });
+                var user = await _userService.VerifyAndCompleteRegistrationAsync(dto.UserId, dto.OtpCode);
+                return Ok(new { Message = "Registration completed successfully", User = user });
             }
             catch (Exception ex)
             {

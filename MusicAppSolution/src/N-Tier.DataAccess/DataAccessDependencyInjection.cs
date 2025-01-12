@@ -42,6 +42,7 @@ public static class DataAccessDependencyInjection
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IJwtTokenHandler, JwtTokenHandler>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
+        services.AddScoped<IOtpRepository, OtpRepository>();
     }
 
     private static void AddDatabase(this IServiceCollection services, IConfiguration configuration)

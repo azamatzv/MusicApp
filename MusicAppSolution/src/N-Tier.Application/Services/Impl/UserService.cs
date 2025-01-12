@@ -4,6 +4,10 @@ using N_Tier.Core.DTOs.UserDtos;
 using N_Tier.Core.Entities;
 using N_Tier.DataAccess.Authentication;
 using N_Tier.DataAccess.Repositories;
+using System.Net.Mail;
+using System.Net;
+using SendGrid;
+using SendGrid.Helpers.Mail;
 
 namespace N_Tier.Application.Services.Impl;
 
@@ -14,18 +18,204 @@ public class UserService : IUserService
     private readonly IValidator<UserDto> _userValidator;
     private readonly IValidator<LoginDto> _loginValidator;
     private readonly IValidator<UpdateUserDto> _updateUserValidator;
+    private readonly IOtpRepository _otpRepository;
 
     public UserService(IUserRepository userRepository,
                        IPasswordHasher passwordHasher,
                        IValidator<UserDto> userValidator,
                        IValidator<LoginDto> loginValidator,
-                       IValidator<UpdateUserDto> updateUserValidator)
+                       IValidator<UpdateUserDto> updateUserValidator,
+                       IOtpRepository otpRepository)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _userValidator = userValidator;
         _loginValidator = loginValidator;
         _updateUserValidator = updateUserValidator;
+        _otpRepository = otpRepository;
+    }
+
+    private async Task SendOtpEmailAsync(string email, string otpCode)
+    {
+        var apiKey = "your-sendgrid-api-key"; // API kalitingizni bu yerga kiriting
+        var client = new SendGridClient(apiKey);
+
+        var from = new EmailAddress("your-email@example.com", "Your App Name");
+        var subject = "Email Verification OTP";
+        var to = new EmailAddress(email);
+        var plainTextContent = $"Your verification code is: {otpCode}. This code will expire in 10 minutes.";
+        var htmlContent = $"<strong>Your verification code is: {otpCode}. This code will expire in 10 minutes.</strong>";
+
+        var message = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
+
+        try
+        {
+            var response = await client.SendEmailAsync(message);
+            if (response.StatusCode == System.Net.HttpStatusCode.Accepted)
+            {
+                Console.WriteLine("Email muvaffaqiyatli yuborildi.");
+            }
+            else
+            {
+                Console.WriteLine($"Email yuborishda xato: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Xatolik yuz berdi: {ex.Message}");
+        }
+    }
+
+
+    private string GenerateOtpCode()
+    {
+        return new Random().Next(100000, 999999).ToString();
+    }
+
+    public async Task<string> ResendOtpAsync(Guid userId)
+    {
+        var user = await _userRepository.GetFirstAsync(u => u.Id == userId);
+        if (user == null)
+            throw new Exception("User not found");
+
+        if (user.IsEmailVerified)
+            throw new Exception("Email already verified");
+
+        // Invalidate all existing active OTPs for this user
+        await _otpRepository.InvalidateUserOtpsAsync(userId);
+
+        // Generate and save new OTP
+        string newOtpCode = GenerateOtpCode();
+        var newOtp = new OtpVerification
+        {
+            UserId = userId,
+            OtpCode = newOtpCode,
+            ExpirationDate = DateTime.UtcNow.AddMinutes(10),
+            IsUsed = false
+        };
+
+        await _otpRepository.AddAsync(newOtp);
+        await SendOtpEmailAsync(user.Email, newOtpCode);
+
+        return "New verification code has been sent to your email";
+    }
+
+
+    public async Task<(Guid userId, string message)> InitiateUserRegistrationAsync(UserDto userDto)
+    {
+        var validationResult = await _userValidator.ValidateAsync(userDto);
+        if (!validationResult.IsValid)
+        {
+            throw new ValidationException(validationResult.Errors);
+        }
+
+        // Check if email already exists
+        var existingUser = await _userRepository.GetFirstAsync(u => u.Email == userDto.Email);
+        if (existingUser != null)
+        {
+            // If user exists but email not verified, allow resending OTP
+            if (!existingUser.IsEmailVerified)
+            {
+                await _otpRepository.InvalidateUserOtpsAsync(existingUser.Id);
+                string newOtpCode = GenerateOtpCode();
+                var newOtp = new OtpVerification
+                {
+                    UserId = existingUser.Id,
+                    OtpCode = newOtpCode,
+                    ExpirationDate = DateTime.UtcNow.AddMinutes(10),
+                    IsUsed = false
+                };
+
+                await _otpRepository.AddAsync(newOtp);
+                await SendOtpEmailAsync(existingUser.Email, newOtpCode);
+
+                return (existingUser.Id, "New verification code has been sent to your email");
+            }
+            throw new InvalidOperationException("Email already registered");
+        }
+
+        // Create temporary user record
+        string salt = Guid.NewGuid().ToString();
+        var user = new Users
+        {
+            Name = userDto.Name,
+            Email = userDto.Email,
+            Password = _passwordHasher.Encrypt(userDto.Password, salt),
+            Salt = salt,
+            IsEmailVerified = false
+        };
+
+        var createdUser = await _userRepository.AddAsync(user);
+
+        // Generate and save OTP
+        string otpCode = GenerateOtpCode();
+        var otp = new OtpVerification
+        {
+            UserId = createdUser.Id,
+            OtpCode = otpCode,
+            ExpirationDate = DateTime.UtcNow.AddMinutes(10),
+            IsUsed = false
+        };
+
+        await _otpRepository.AddAsync(otp);
+        await SendOtpEmailAsync(userDto.Email, otpCode);
+
+        return (createdUser.Id, "Please check your email for verification code");
+    }
+
+
+    public async Task<UserResponceDto> VerifyAndCompleteRegistrationAsync(Guid userId, string otpCode)
+    {
+        try
+        {
+            var otp = await _otpRepository.GetActiveOtpAsync(userId, otpCode);
+            var user = await _userRepository.GetFirstAsync(u => u.Id == userId);
+
+            if (user == null)
+                throw new Exception("User not found");
+
+            // Verify OTP
+            if (otp.IsUsed || otp.ExpirationDate < DateTime.UtcNow)
+            {
+                // Automatically invalidate expired OTP
+                if (otp.ExpirationDate < DateTime.UtcNow)
+                {
+                    await _otpRepository.InvalidateUserOtpsAsync(userId);
+                }
+                throw new Exception("Invalid or expired OTP. Please request a new one.");
+            }
+
+            // Mark OTP as used
+            otp.IsUsed = true;
+            await _otpRepository.UpdateAsync(otp);
+
+            // Complete user registration
+            user.IsEmailVerified = true;
+            await _userRepository.UpdateAsync(user);
+
+            // Create account for verified user
+            var account = new Accounts
+            {
+                UserId = user.Id,
+                Name = user.Name,
+                TariffTypeId = Guid.Empty // Set default tariff or use provided one
+            };
+            user.Accounts = new List<Accounts> { account };
+            await _userRepository.UpdateAsync(user);
+
+            return new UserResponceDto
+            {
+                Name = user.Name,
+                Email = user.Email,
+                Role = user.Role.ToString(),
+                TariffId = account.TariffTypeId
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+            throw;
+        }
     }
 
     public async Task<UserResponceDto> AddUserAsync(UserDto userDto)
