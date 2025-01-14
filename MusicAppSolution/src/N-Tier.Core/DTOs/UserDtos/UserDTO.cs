@@ -6,8 +6,8 @@ namespace N_Tier.Core.DTOs.UserDtos;
 
 public class UserDto
 {
-    [DefaultValue("")]
-    public Guid TariffId { get; set; }
+    //[DefaultValue("")]
+    //public Guid TariffId { get; set; }
     [DefaultValue("")]
     public string? Name { get; set; }
     [DefaultValue("")]

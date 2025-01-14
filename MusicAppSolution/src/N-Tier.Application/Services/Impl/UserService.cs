@@ -10,6 +10,7 @@ using SendGrid;
 using SendGrid.Helpers.Mail;
 using N_Tier.Application.DataTransferObjects;
 using Microsoft.Extensions.Options;
+using FluentValidation.Results;
 
 namespace N_Tier.Application.Services.Impl;
 
@@ -97,7 +98,7 @@ public class UserService : IUserService
         {
             UserId = userId,
             OtpCode = newOtpCode,
-            ExpirationDate = DateTime.UtcNow.AddMinutes(10),
+            ExpirationDate = DateTime.Now.AddMinutes(10),
             IsUsed = false
         };
 
@@ -113,14 +114,14 @@ public class UserService : IUserService
         var validationResult = await _userValidator.ValidateAsync(userDto);
         if (!validationResult.IsValid)
         {
-            throw new ValidationException(validationResult.Errors);
+            // Xatoliklarni to'g'ridan-to'g'ri qabul qilish
+            throw new ValidationException("Validation failed", validationResult.Errors); // Bunday qilib to'g'ri bo'ladi
         }
 
         // Check if email already exists
         var existingUser = await _userRepository.GetFirstAsync(u => u.Email == userDto.Email);
         if (existingUser != null)
         {
-            // If user exists but email not verified, allow resending OTP
             if (!existingUser.IsEmailVerified)
             {
                 await _otpRepository.InvalidateUserOtpsAsync(existingUser.Id);
@@ -129,15 +130,21 @@ public class UserService : IUserService
                 {
                     UserId = existingUser.Id,
                     OtpCode = newOtpCode,
-                    ExpirationDate = DateTime.UtcNow.AddMinutes(10),
+                    ExpirationDate = DateTime.Now.AddMinutes(10),
                     IsUsed = false
                 };
 
                 await _otpRepository.AddAsync(newOtp);
+                Console.WriteLine($@"Created new OTP:
+UserId: {newOtp.UserId}
+OtpCode: {newOtpCode}
+ExpirationDate: {newOtp.ExpirationDate}
+IsUsed: {newOtp.IsUsed}");
                 await SendOtpEmailAsync(existingUser.Email, newOtpCode);
 
                 return (existingUser.Id, "New verification code has been sent to your email");
             }
+
             throw new InvalidOperationException("Email already registered");
         }
 
@@ -160,7 +167,7 @@ public class UserService : IUserService
         {
             UserId = createdUser.Id,
             OtpCode = otpCode,
-            ExpirationDate = DateTime.UtcNow.AddMinutes(10),
+            ExpirationDate = DateTime.Now.AddMinutes(10),
             IsUsed = false
         };
 
@@ -171,7 +178,8 @@ public class UserService : IUserService
     }
 
 
-    public async Task<UserResponceDto> VerifyAndCompleteRegistrationAsync(Guid userId, string otpCode)
+
+    public async Task<UserResponceDto> VerifyAndCompleteRegistrationAsync(Guid userId, string otpCode, Guid tariffTypeId)
     {
         try
         {
@@ -182,10 +190,10 @@ public class UserService : IUserService
                 throw new Exception("User not found");
 
             // Verify OTP
-            if (otp.IsUsed || otp.ExpirationDate < DateTime.UtcNow)
+            if (otp.IsUsed || otp.ExpirationDate < DateTime.Now)
             {
                 // Automatically invalidate expired OTP
-                if (otp.ExpirationDate < DateTime.UtcNow)
+                if (otp.ExpirationDate < DateTime.Now)
                 {
                     await _otpRepository.InvalidateUserOtpsAsync(userId);
                 }
@@ -205,7 +213,7 @@ public class UserService : IUserService
             {
                 UserId = user.Id,
                 Name = user.Name,
-                TariffTypeId = Guid.Empty // Set default tariff or use provided one
+                TariffTypeId = tariffTypeId // Set default tariff or use provided one
             };
             user.Accounts = new List<Accounts> { account };
             await _userRepository.UpdateAsync(user);
@@ -225,57 +233,57 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<UserResponceDto> AddUserAsync(UserDto userDto)
-    {
-        try
-        {
-            var validationResult = await _userValidator.ValidateAsync(userDto);
-            if (!validationResult.IsValid)
-            {
-                throw new ValidationException(validationResult.Errors);
-            }
+    //public async Task<UserResponceDto> AddUserAsync(UserDto userDto)
+    //{
+    //    try
+    //    {
+    //        var validationResult = await _userValidator.ValidateAsync(userDto);
+    //        if (!validationResult.IsValid)
+    //        {
+    //            throw new ValidationException(validationResult.Errors);
+    //        }
 
-            string salt = Guid.NewGuid().ToString();
-            var user = new Users
-            {
-                Name = userDto.Name,
-                Email = userDto.Email,
-                Password = _passwordHasher.Encrypt(password: userDto.Password, salt: salt),
-                Salt = salt,
-                Accounts = new List<Accounts>
-            {
-                new Accounts
-                {
-                    Name = userDto.Name,
-                    TariffTypeId = userDto.TariffId
-                }
-            }
-            };
+    //        string salt = Guid.NewGuid().ToString();
+    //        var user = new Users
+    //        {
+    //            Name = userDto.Name,
+    //            Email = userDto.Email,
+    //            Password = _passwordHasher.Encrypt(password: userDto.Password, salt: salt),
+    //            Salt = salt,
+    //            Accounts = new List<Accounts>
+    //        {
+    //            new Accounts
+    //            {
+    //                Name = userDto.Name,
+    //                TariffTypeId = userDto.TariffId
+    //            }
+    //        }
+    //        };
 
-            var createdUser = await _userRepository.AddAsync(user);
+    //        var createdUser = await _userRepository.AddAsync(user);
 
-            var account = createdUser.Accounts.FirstOrDefault();
-            if (account != null)
-            {
-                account.UserId = createdUser.Id;
-                account.Name = createdUser.Name;
-                await _userRepository.UpdateAsync(createdUser);
-            }
+    //        var account = createdUser.Accounts.FirstOrDefault();
+    //        if (account != null)
+    //        {
+    //            account.UserId = createdUser.Id;
+    //            account.Name = createdUser.Name;
+    //            await _userRepository.UpdateAsync(createdUser);
+    //        }
 
-            return new UserResponceDto
-            {
-                Name = createdUser.Name,
-                Email = createdUser.Email,
-                Role = createdUser.Role.ToString(),
-                TariffId = account?.TariffTypeId ?? Guid.Empty
-            };
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Error: " + ex.Message, "StackTrace: ", ex.StackTrace + "InnerException: " + ex.InnerException);
-            throw;
-        }
-    }
+    //        return new UserResponceDto
+    //        {
+    //            Name = createdUser.Name,
+    //            Email = createdUser.Email,
+    //            Role = createdUser.Role.ToString(),
+    //            TariffId = account?.TariffTypeId ?? Guid.Empty
+    //        };
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        Console.WriteLine("Error: " + ex.Message, "StackTrace: ", ex.StackTrace + "InnerException: " + ex.InnerException);
+    //        throw;
+    //    }
+    //}
 
     public async Task<AuthorizationUserDto> AuthenticateAsync(LoginDto loginDto)
     {

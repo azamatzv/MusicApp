@@ -26,16 +26,37 @@ public class OtpRepository : BaseRepository<OtpVerification>, IOtpRepository
 
         try
         {
+            var allOtpsForUser = await DbSet
+             .Where(o => o.UserId == userId)
+             .ToListAsync();
+
+            Console.WriteLine($"Found {allOtpsForUser.Count} OTPs for user {userId}");
+            foreach (var otpRecord in allOtpsForUser)
+            {
+                Console.WriteLine($@"OTP Record:
+                Code: {otpRecord.OtpCode}
+                Expiration: {otpRecord.ExpirationDate}
+                IsUsed: {otpRecord.IsUsed}
+                Current UTC Time: {DateTime.Now}
+                Is Expired: {otpRecord.ExpirationDate <= DateTime.Now}");
+            }
+
             var otp = await DbSet
                 .Where(o =>
                     o.UserId == userId &&
                     o.OtpCode == otpCode &&
-                    o.ExpirationDate > DateTime.UtcNow &&
+                    o.ExpirationDate > DateTime.Now &&
                     !o.IsUsed)
                 .FirstOrDefaultAsync();
 
             if (otp == null)
+            {
+                Console.WriteLine($@"No valid OTP found with criteria:
+                UserId: {userId}
+                OtpCode: {otpCode}
+                Current UTC Time: {DateTime.Now}");
                 throw new ResourceNotFoundException(typeof(OtpVerification));
+            }
 
             return otp;
         }
@@ -54,7 +75,7 @@ public class OtpRepository : BaseRepository<OtpVerification>, IOtpRepository
         {
             return await DbSet.AnyAsync(o =>
                 o.UserId == userId &&
-                o.ExpirationDate > DateTime.UtcNow &&
+                o.ExpirationDate > DateTime.Now &&
                 !o.IsUsed);
         }
         catch (Exception ex)
@@ -68,7 +89,7 @@ public class OtpRepository : BaseRepository<OtpVerification>, IOtpRepository
         try
         {
             var expiredOtps = await DbSet
-                .Where(o => o.ExpirationDate < DateTime.UtcNow)
+                .Where(o => o.ExpirationDate < DateTime.Now)
                 .ToListAsync();
 
             if (expiredOtps.Any())
@@ -93,7 +114,7 @@ public class OtpRepository : BaseRepository<OtpVerification>, IOtpRepository
             var activeOtps = await DbSet
                 .Where(o =>
                     o.UserId == userId &&
-                    o.ExpirationDate > DateTime.UtcNow &&
+                    o.ExpirationDate > DateTime.Now &&
                     !o.IsUsed)
                 .ToListAsync();
 

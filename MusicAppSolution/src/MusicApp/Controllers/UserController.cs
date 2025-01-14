@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using N_Tier.Application.DataTransferObjects.Authentication;
 using N_Tier.Application.Services;
@@ -56,6 +57,19 @@ namespace MusicApp.Controllers
                 var (userId, message) = await _userService.InitiateUserRegistrationAsync(userDto);
                 return Ok(new { UserId = userId, Message = message });
             }
+            catch (ValidationException ex)
+            {
+                // Validation xatolari xususiyatlari bilan
+                var errorMessages = ex.Errors
+                    .GroupBy(e => e.PropertyName) // Guruhlash
+                    .Select(g => new
+                    {
+                        Field = g.Key,
+                        Messages = g.Select(e => e.ErrorMessage).ToList()
+                    }).ToList();
+
+                return BadRequest(new { Message = "Validation failed", Errors = errorMessages });
+            }
             catch (Exception ex)
             {
                 return BadRequest(new { Message = ex.Message, Details = ex.InnerException?.Message });
@@ -71,7 +85,7 @@ namespace MusicApp.Controllers
 
             try
             {
-                var user = await _userService.VerifyAndCompleteRegistrationAsync(dto.UserId, dto.OtpCode);
+                var user = await _userService.VerifyAndCompleteRegistrationAsync(dto.UserId, dto.OtpCode, dto.TariffTypeId);
                 return Ok(new { Message = "Registration completed successfully", User = user });
             }
             catch (Exception ex)
