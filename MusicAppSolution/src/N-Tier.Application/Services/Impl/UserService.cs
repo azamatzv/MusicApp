@@ -1,16 +1,14 @@
 ﻿using FluentValidation;
+using Microsoft.Extensions.Options;
+using N_Tier.Application.DataTransferObjects;
 using N_Tier.Application.DataTransferObjects.Authentication;
 using N_Tier.Core.DTOs.UserDtos;
 using N_Tier.Core.Entities;
 using N_Tier.DataAccess.Authentication;
 using N_Tier.DataAccess.Repositories;
-using System.Net.Mail;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
-using SendGrid;
-using SendGrid.Helpers.Mail;
-using N_Tier.Application.DataTransferObjects;
-using Microsoft.Extensions.Options;
-using FluentValidation.Results;
+using System.Net.Mail;
 
 namespace N_Tier.Application.Services.Impl;
 
@@ -23,6 +21,7 @@ public class UserService : IUserService
     private readonly IValidator<LoginDto> _loginValidator;
     private readonly IValidator<UpdateUserDto> _updateUserValidator;
     private readonly IOtpRepository _otpRepository;
+    private readonly IJwtTokenHandler _jwtTokenHandler;
 
     public UserService(IUserRepository userRepository,
                        IPasswordHasher passwordHasher,
@@ -30,7 +29,8 @@ public class UserService : IUserService
                        IValidator<LoginDto> loginValidator,
                        IValidator<UpdateUserDto> updateUserValidator,
                        IOtpRepository otpRepository,
-                       IOptions<SmtpSettings> smtpSettings)
+                       IOptions<SmtpSettings> smtpSettings,
+                       IJwtTokenHandler jwtTokenHandler)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
@@ -39,6 +39,7 @@ public class UserService : IUserService
         _updateUserValidator = updateUserValidator;
         _otpRepository = otpRepository;
         _smtpSettings = smtpSettings.Value;
+        _jwtTokenHandler = jwtTokenHandler;
     }
 
     private async Task SendOtpEmailAsync(string email, string otpCode)
@@ -89,10 +90,8 @@ public class UserService : IUserService
         if (user.IsEmailVerified)
             throw new Exception("Email already verified");
 
-        // Invalidate all existing active OTPs for this user
         await _otpRepository.InvalidateUserOtpsAsync(userId);
 
-        // Generate and save new OTP
         string newOtpCode = GenerateOtpCode();
         var newOtp = new OtpVerification
         {
@@ -108,17 +107,14 @@ public class UserService : IUserService
         return "New verification code has been sent to your email";
     }
 
-
     public async Task<(Guid userId, string message)> InitiateUserRegistrationAsync(UserDto userDto)
     {
         var validationResult = await _userValidator.ValidateAsync(userDto);
         if (!validationResult.IsValid)
         {
-            // Xatoliklarni to'g'ridan-to'g'ri qabul qilish
-            throw new ValidationException("Validation failed", validationResult.Errors); // Bunday qilib to'g'ri bo'ladi
+            throw new ValidationException("Validation failed", validationResult.Errors);
         }
 
-        // Check if email already exists
         var existingUser = await _userRepository.GetFirstAsync(u => u.Email == userDto.Email);
         if (existingUser != null)
         {
@@ -148,7 +144,6 @@ IsUsed: {newOtp.IsUsed}");
             throw new InvalidOperationException("Email already registered");
         }
 
-        // Create temporary user record
         string salt = Guid.NewGuid().ToString();
         var user = new Users
         {
@@ -161,7 +156,6 @@ IsUsed: {newOtp.IsUsed}");
 
         var createdUser = await _userRepository.AddAsync(user);
 
-        // Generate and save OTP
         string otpCode = GenerateOtpCode();
         var otp = new OtpVerification
         {
@@ -177,9 +171,7 @@ IsUsed: {newOtp.IsUsed}");
         return (createdUser.Id, "Please check your email for verification code");
     }
 
-
-
-    public async Task<UserResponceDto> VerifyAndCompleteRegistrationAsync(Guid userId, string otpCode, Guid tariffTypeId)
+    public async Task<(UserResponceDto user, string accessToken, string refreshToken)> VerifyAndCompleteRegistrationAsync(Guid userId, string otpCode, Guid tariffTypeId)
     {
         try
         {
@@ -189,10 +181,8 @@ IsUsed: {newOtp.IsUsed}");
             if (user == null)
                 throw new Exception("User not found");
 
-            // Verify OTP
             if (otp.IsUsed || otp.ExpirationDate < DateTime.Now)
             {
-                // Automatically invalidate expired OTP
                 if (otp.ExpirationDate < DateTime.Now)
                 {
                     await _otpRepository.InvalidateUserOtpsAsync(userId);
@@ -200,31 +190,43 @@ IsUsed: {newOtp.IsUsed}");
                 throw new Exception("Invalid or expired OTP. Please request a new one.");
             }
 
-            // Mark OTP as used
             otp.IsUsed = true;
             await _otpRepository.UpdateAsync(otp);
 
-            // Complete user registration
             user.IsEmailVerified = true;
             await _userRepository.UpdateAsync(user);
 
-            // Create account for verified user
             var account = new Accounts
             {
                 UserId = user.Id,
                 Name = user.Name,
-                TariffTypeId = tariffTypeId // Set default tariff or use provided one
+                TariffTypeId = tariffTypeId
             };
             user.Accounts = new List<Accounts> { account };
             await _userRepository.UpdateAsync(user);
 
-            return new UserResponceDto
+            var authUser = new AuthorizationUserDto
             {
-                Name = user.Name,
+                Id = user.Id,
                 Email = user.Email,
-                Role = user.Role.ToString(),
-                TariffId = account.TariffTypeId
+                Role = user.Role,
+                Password = user.Password
             };
+
+            var jwtToken = await _jwtTokenHandler.GenerateAccessToken(authUser);
+            var refreshToken = _jwtTokenHandler.GenerateRefreshToken();
+
+            return (
+                new UserResponceDto
+                {
+                    Name = user.Name,
+                    Email = user.Email,
+                    Role = user.Role.ToString(),
+                    TariffId = account.TariffTypeId
+                },
+                new JwtSecurityTokenHandler().WriteToken(jwtToken),
+                refreshToken
+            );
         }
         catch (Exception ex)
         {
@@ -232,58 +234,6 @@ IsUsed: {newOtp.IsUsed}");
             throw;
         }
     }
-
-    //public async Task<UserResponceDto> AddUserAsync(UserDto userDto)
-    //{
-    //    try
-    //    {
-    //        var validationResult = await _userValidator.ValidateAsync(userDto);
-    //        if (!validationResult.IsValid)
-    //        {
-    //            throw new ValidationException(validationResult.Errors);
-    //        }
-
-    //        string salt = Guid.NewGuid().ToString();
-    //        var user = new Users
-    //        {
-    //            Name = userDto.Name,
-    //            Email = userDto.Email,
-    //            Password = _passwordHasher.Encrypt(password: userDto.Password, salt: salt),
-    //            Salt = salt,
-    //            Accounts = new List<Accounts>
-    //        {
-    //            new Accounts
-    //            {
-    //                Name = userDto.Name,
-    //                TariffTypeId = userDto.TariffId
-    //            }
-    //        }
-    //        };
-
-    //        var createdUser = await _userRepository.AddAsync(user);
-
-    //        var account = createdUser.Accounts.FirstOrDefault();
-    //        if (account != null)
-    //        {
-    //            account.UserId = createdUser.Id;
-    //            account.Name = createdUser.Name;
-    //            await _userRepository.UpdateAsync(createdUser);
-    //        }
-
-    //        return new UserResponceDto
-    //        {
-    //            Name = createdUser.Name,
-    //            Email = createdUser.Email,
-    //            Role = createdUser.Role.ToString(),
-    //            TariffId = account?.TariffTypeId ?? Guid.Empty
-    //        };
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        Console.WriteLine("Error: " + ex.Message, "StackTrace: ", ex.StackTrace + "InnerException: " + ex.InnerException);
-    //        throw;
-    //    }
-    //}
 
     public async Task<AuthorizationUserDto> AuthenticateAsync(LoginDto loginDto)
     {
@@ -307,7 +257,6 @@ IsUsed: {newOtp.IsUsed}");
 
         return MapTodto(user);
     }
-
 
     public async Task<UserDto> GetByIdAsync(Guid id)
     {
@@ -350,6 +299,7 @@ IsUsed: {newOtp.IsUsed}");
     }
 
 
+
     private AuthorizationUserDto MapTodto(Users user)
     {
         return new AuthorizationUserDto
@@ -360,8 +310,6 @@ IsUsed: {newOtp.IsUsed}");
             Role = user.Role
         };
     }
-
-
 
     private UserDto MapToDto(Users user)
     {

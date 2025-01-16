@@ -2,19 +2,12 @@
 using N_Tier.Core.Entities;
 using N_Tier.Core.Exceptions;
 using N_Tier.DataAccess.Persistence;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace N_Tier.DataAccess.Repositories.Impl;
 
 public class OtpRepository : BaseRepository<OtpVerification>, IOtpRepository
 {
-    public OtpRepository(DatabaseContext context) : base(context)
-    {
-    }
+    public OtpRepository(DatabaseContext context) : base(context) { }
 
     public async Task<OtpVerification> GetActiveOtpAsync(Guid userId, string otpCode)
     {

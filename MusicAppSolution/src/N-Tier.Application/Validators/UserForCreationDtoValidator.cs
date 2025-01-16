@@ -37,9 +37,5 @@ namespace N_Tier.Application.Validators
 
             return validationResult;
         }
-
-
     }
-
-
 }
